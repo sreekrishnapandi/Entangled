@@ -3,7 +3,6 @@ __author__ = 'Krish'
 import socket
 import os
 import kodo
-from time import sleep
 
 def recvFileKODO(adr, file):
     print "in recv"
