@@ -1,0 +1,14 @@
+1.Sender sends many packets b4 it recieves the DECODED. These are used by next gen of decoder.
+
+KODO Python - Bugs?
+
+1. If encoder is not full, i.e. if <payload size> is less than the <Bulk Size> , Data is not reproducable at Decoder's end.
+    My temp Solution : Pad the first symbol with enough '*' such that now the  <Bulk Size> = <payload size> ; and unpad it after decoding.
+
+2. KODO does not inherently provide a way to split the Payload into multiple generations.
+
+3. (As a result of point 2,); Sender sends many packets of current gen (even after Decoder decodes it) b4 it recieves the DECODED.
+    These are used by next gen of decoder. (bcos its UDP and packets can also arrive late)
+
+    Possible Solution: KODO can provide a way to store the <gen no> in the packets. So the decoder knows which generation it is decoding.
+    In KODO examples they use a sleep of 200ms per packet to get around this BUG. Unacceptable.
