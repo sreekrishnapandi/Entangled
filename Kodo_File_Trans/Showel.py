@@ -1,7 +1,9 @@
 __author__ = 'Krish'
 
-from KODO_FileTrans import *
 import time
+
+from Kodo_File_Trans.KODO_FileTrans import *
+
 
 start = time.time()
 

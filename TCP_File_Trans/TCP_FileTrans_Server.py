@@ -1,7 +1,8 @@
 __author__ = 'Krish'
 
 import socket
-from TCP_FileTrans import *
+
+from TCP_File_Trans.TCP_FileTrans import *
 
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

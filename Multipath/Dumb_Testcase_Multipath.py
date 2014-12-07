@@ -70,6 +70,9 @@ def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link5, l
         """
         buf3 = 0
         buf4 = 0
+        prev_buf3 = 0
+        prev_buf4 = 0
+
 
         while not decoder.is_complete():
             buf1 = encoder.encode()
@@ -82,7 +85,7 @@ def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link5, l
                     relayed_pkts += 1
                 else:
                     recoder1.decode(buf1)
-            if np.random.randint(100) >= con5_pkt_loss_rate and not buf4 == 0:
+            if np.random.randint(100) >= con5_pkt_loss_rate and not prev_buf4 == buf4:
                 if recode == 1:
                     recoder1.decode(buf4)
             if recode == 1:
@@ -116,7 +119,7 @@ def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link5, l
                     relayed_pkts += 1
                 else:
                     recoder2.decode(buf1)
-            if np.random.randint(100) >= con5_pkt_loss_rate and not buf3 == 0:
+            if np.random.randint(100) >= con5_pkt_loss_rate and not buf3 == prev_buf3:
                 if recode == 1:
                     recoder2.decode(buf3)
 
@@ -136,18 +139,20 @@ def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link5, l
             #         recoder2.decode(buf3)
             # buf4 = recoder2.recode()
 
-            if np.random.randint(100) >= con3_pkt_loss_rate and not buf3 == 0:
+            if np.random.randint(100) >= con3_pkt_loss_rate and not prev_buf3 == buf3:
                 decoder.decode(buf3)
                 #print(decoder.rank())
                 if prev_rank == decoder.rank():
                     lin_dep_pkts += 1
                 prev_rank = decoder.rank()
+                prev_buf3 = buf3
 
-            if np.random.randint(100) >= con4_pkt_loss_rate and not buf4 == 0:
+            if np.random.randint(100) >= con4_pkt_loss_rate and not prev_buf4 == buf4:
                 decoder.decode(buf4)
                 if prev_rank == decoder.rank():
                     lin_dep_pkts += 1
                 prev_rank = decoder.rank()
+                prev_buf4 = buf4
 
             if np.random.randint(100) >= con6_pkt_loss_rate and not buf1 == 0:
                 decoder.decode(buf1)
@@ -156,6 +161,7 @@ def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link5, l
                 prev_rank = decoder.rank()
 
             #print("rank: {}/{}".format(decoder.rank(), decoder.symbols()))
+
 
         d_out += (decoder.copy_symbols())
 
@@ -186,7 +192,7 @@ def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link5, l
     print "Time to Transfer    = " + str(time_taken) + " seconds"
     print("Total Sent Packets  = " + str(sentPackets))
     print("Minimum Req Packets = " + str(min_req_pkts))
-    print("Overhead            = " + str(pkt_overhead))
+    #print("Overhead            = " + str(pkt_overhead))
     print("Redundancy          = " + str(redundancy))
     print("Lin dependant pkts  = " + str(lin_dep_pkts))
     print("Relayed Packets     = " + str(relayed_pkts))
@@ -283,15 +289,30 @@ spmap = [0]
 
 """"""
 pak = 0
-for _x in range(50):
-    _,pa,_,_,_,_,_,_ = multipath_switch_recoding(FILE, 0, 100, 100, 100, 100, 100, 75)
+ldpak = 0
+rpak = 0
+
+i =50
+
+for _x in range(i):
+    _,pa,ldp,rp,_,_,_,_ = multipath_switch_recoding(FILE, 1, 20, 10, 60, 10, 00, 100)
     pak += pa
-    print(pak)
-avg_pak = pak/50
-print("AVERAGE OF 100 runs : SENT PACKETS = " + str(avg_pak))
+    ldpak += ldp
+    rpak += rp
+
+    #print(pak)
+avg_pak = pak/i
+avg_ldpak = ldpak/i
+avg_rpak = rpak/i
+
+print("AVERAGE OF 100 runs : SENT PACKETS    = " + str(avg_pak))
+print("AVERAGE OF 100 runs : RELAYED PACKETS = " + str(avg_rpak))
+print("AVERAGE OF 100 runs : Lin Dep PACKETS = " + str(avg_ldpak))
+
 """"""
 R1 = np.array(report1)
 R2 = np.array(report2)
+
 # R3 = np.array(report3)
 # R4 = np.array(report4)
 
