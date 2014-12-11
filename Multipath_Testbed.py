@@ -11,6 +11,12 @@ import time
 global DECODED
 global buf
 global adr
+global relays
+global sleep_time
+
+relays = 3
+sleep_time = 0.00001
+
 
 DECODED = False
 buf = [0 for _ in range(20)]
@@ -72,7 +78,31 @@ class Node:
         while not DECODED:
             print("Encoding...")
             buf[self.bufindex] = encoder.encode()
-            #time.sleep(1)
+            time.sleep(sleep_time)                    # DELAY INTRODUCED to synchronise Encoding and decoding.
+
+    @threaded
+    def relay(self):
+        global DECODED
+        # print(".........Decoding..")
+        symbol_size = 128
+        symbols = 60
+
+        decoder_factory = kodo.FullVectorDecoderFactoryBinary(symbols, symbol_size)
+        recoder = decoder_factory.build()
+
+        print(adr[1])
+
+        while not DECODED:
+            print("####Relay#### " + str(self.bufindex))
+            for i in range(relays-1):
+                #sqrt((self.x - adr[i][0])**2 + (self.y - adr[i][1]))**2)
+                if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+#                if np.random.randint(100) >= (sqrt((self.x - adr[i][0])**2 + (self.y - adr[i][1])**2)) * 5 and not adr[i] == (self.x, self.y):
+                    recoder.decode(buf[i])
+                    buf[self.bufindex] = recoder.recode()
+                    #print("Decoder Rank : " + str(decoder.rank()))
+            time.sleep(sleep_time)              # DELAY INTRODUCED to synchronise Encoding and decoding.
+
 
     @threaded
     def sink(self):
@@ -87,12 +117,14 @@ class Node:
         print(adr[1])
 
         while not decoder.is_complete():
-            for i in range(3):
-                print(".........Decoding..")
+            for i in range(relays):
+                print("##DECODER##")
+                #sqrt((self.x - adr[i][0])**2 + (self.y - adr[i][1]))**2)
                 if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+#                if np.random.randint(100) >= (sqrt((self.x - adr[i][0])**2 + (self.y - adr[i][1])**2)) * 5 and not adr[i] == (self.x, self.y):
                     decoder.decode(buf[i])
                     print("Decoder Rank : " + str(decoder.rank()))
-                #time.sleep(1)
+            time.sleep(sleep_time)              # DELAY INTRODUCED to synchronise Encoding and decoding.
 
         if decoder.is_complete():
             DECODED = True
@@ -100,8 +132,12 @@ class Node:
 
 
 src = Node(0, 0, 0)
-snk = Node(0, 5, 1)
+relay = Node(0, 2, 1)
+snk = Node(0, 5, 2)
+
 
 src.source("")
+time.sleep(0.001)
+relay.relay()
 time.sleep(0.001)
 snk.sink()
