@@ -6,15 +6,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link5, linkx):
+def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link12, linkx):
 
     start = time.time()
     con1_pkt_loss_rate = link1
     con2_pkt_loss_rate = link2
     con3_pkt_loss_rate = link3
     con4_pkt_loss_rate = link4
-    con5_pkt_loss_rate = link5
-    con6_pkt_loss_rate = linkx
+    con12_pkt_loss_rate = link12
+    con_x_pkt_loss_rate = linkx
 
     try:
         fsize = os.path.getsize(FILE)
@@ -81,7 +81,7 @@ def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link5, l
                     relayed_pkts += 1
                 else:
                     recoder1.decode(buf1)
-            if np.random.randint(100) >= con5_pkt_loss_rate and not prev_buf4 == buf4:
+            if np.random.randint(100) >= con12_pkt_loss_rate and not prev_buf4 == buf4:
                 if recode == 1:
                     recoder1.decode(buf4)
             if recode == 1:
@@ -94,7 +94,7 @@ def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link5, l
                     relayed_pkts += 1
                 else:
                     recoder2.decode(buf1)
-            if np.random.randint(100) >= con5_pkt_loss_rate and not buf3 == prev_buf3:
+            if np.random.randint(100) >= con12_pkt_loss_rate and not buf3 == prev_buf3:
                 if recode == 1:
                     recoder2.decode(buf3)
 
@@ -117,7 +117,7 @@ def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link5, l
                 prev_rank = decoder.rank()
                 prev_buf4 = buf4
 
-            if np.random.randint(100) >= con6_pkt_loss_rate and not buf1 == 0:
+            if np.random.randint(100) >= con_x_pkt_loss_rate and not buf1 == 0:
                 decoder.decode(buf1)
                 if prev_rank == decoder.rank():
                     lin_dep_pkts += 1
@@ -164,4 +164,4 @@ def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link5, l
     report = {'time': time_taken, 'sent_pkts': sentPackets, 'min_pkts': min_req_pkts,
               'overhead': pkt_overhead, 'redundancy': redundancy}
 
-    return time_taken, sentPackets, lin_dep_pkts, relayed_pkts, redundancy, link1, link3, link5
+    return time_taken, sentPackets, lin_dep_pkts, relayed_pkts, redundancy, link1, link3, link12

@@ -3,10 +3,11 @@ __author__ = 'Krish'
 from Multipath_robust import np, plt, multipath_switch_recoding
 
 #FILE = '/Users/Krish/Office/FILES/randomBinary_10MB.bin'
-#FILE = '/Users/Krish/Office/FILES/randomBinary_1Gen_1480x60.bin'
 #FILE = '/Users/Krish/Office/FILES/randomBinary_1480x60-1.bin'
 #FILE = '/Users/Krish/Office/FILES/randomBinary_1MB.bin'
 FILE = '/Users/Krish/Office/FILES/randomBinary_1Gen_120x60.bin'
+#FILE = '/Users/Krish/Office/FILES/randomBinary_1Byte'
+
 
 
 report1 = []
@@ -21,7 +22,7 @@ spmap = [0]
 for i in range(5, 100, 5):
     spmap.append([])
     for j in range(5, 100, 5):
-        map1.append(multipath_switch_recoding(FILE, 1, i, j, 100-i, 100-j, 50, 100))
+        map1.append(multipath_switch_recoding(FILE, 0, i, j, 100-i, 100-j, 100, 100))
         spmap[i/5].append(map1[len(map1)-1][1])
 spmap.pop(0)
 
@@ -50,9 +51,9 @@ X, Y = np.meshgrid(X, Y)
 Z = spmap
 surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 #
-cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
-cset = ax.contour(X, Y, Z, zdir='x', offset=-40, cmap=cm.coolwarm)
-cset = ax.contour(X, Y, Z, zdir='y', offset=40, cmap=cm.coolwarm)
+# cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
+# cset = ax.contour(X, Y, Z, zdir='x', offset=-40, cmap=cm.coolwarm)
+# cset = ax.contour(X, Y, Z, zdir='y', offset=40, cmap=cm.coolwarm)
 #
 surf.set_clim(vmin=3500, vmax=11000)
 ax.set_zlabel("Sent Packets")

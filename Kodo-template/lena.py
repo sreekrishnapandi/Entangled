@@ -9,7 +9,7 @@
 import kodo
 import kodo_helpers
 
-import Image
+from PIL import Image
 import math
 import os
 import random
@@ -85,10 +85,13 @@ def main():
     # this prevents the program from locking up, as the finally clause will
     # close down the image viewer.
     canvas.start()
+
+    image_viewer.set_image(data_in)
     try:
         packets = 0
         while not decoder.is_complete():
             packet = encoder.encode()
+            print("Encoded")
             packets += 1
 
             # Drop some packets
@@ -100,7 +103,7 @@ def main():
                 image_viewer.set_image(decoder.copy_symbols())
 
         # Let the user see the photo before closing the application
-        time.sleep(1)
+        #time.sleep(1)
     finally:
         canvas.stop()
 

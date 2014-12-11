@@ -16,7 +16,7 @@ rpak = 0
 i =50
 
 for _x in range(i):
-    _,pa,ldp,rp,_,_,_,_ = multipath_switch_recoding(FILE, 1, 20, 10, 60, 10, 00, 100)
+    _,pa,ldp,rp,_,_,_,_ = multipath_switch_recoding(FILE, 1, 80, 80, 80, 80, 100, 100)
     pak += pa
     ldpak += ldp
     rpak += rp
