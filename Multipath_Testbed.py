@@ -17,8 +17,11 @@ global encoded_packets
 global decoded_packets
 global lin_dep_pkts
 global relayed_pkts
+global sync_nodes
+global lock
+global token
 
-relays = 3
+relays = 1
 sleep_time = 0.00001
 
 DECODED = False
@@ -29,7 +32,16 @@ encoded_packets = 0
 decoded_packets = 0
 lin_dep_pkts = 0
 relayed_pkts = 0
+sync_nodes = 0
+lock = threading.Lock()
+token = [1 for _ in range(20)]
 
+"""
+Problem : Python - thread scheduling =>
+                            * multiple Encoding cycles and multiple decoding/ relay cycles done in bunches.
+# Token is to ensure that each node iterates not more than once.
+# Lock and Sync_nodes ensure that all nodes iterate atleast once.
+"""
 
 def initialize():
     global DECODED
@@ -42,6 +54,10 @@ def initialize():
     global decoded_packets
     global lin_dep_pkts
     global relayed_pkts
+    global sync_nodes
+    global lock
+    global token
+
     DECODED = False
     buf = [0 for _ in range(20)]
     adr = [(1000, 1000) for _ in range(20)]
@@ -50,11 +66,9 @@ def initialize():
     decoded_packets = 0
     lin_dep_pkts = 0
     relayed_pkts = 0
-
-
-# def dist(self, x, y):
-#     print(sqrt((self.x - x)**2 + (self.y - y)**2))
-#     return sqrt((self.x - x)**2 + (self.y - y)**2)
+    sync_nodes = 0
+    lock = threading.Lock()
+    token = [1 for _ in range(20)]
 
 
 def delay(): time.sleep(0.001)
@@ -74,6 +88,7 @@ class Node:
         adr[bufindex] = (x, y)
         self.symbol_size = 128
         self.symbols = 60
+        lock = threading.Lock()
 
     def dist(self, x, y):
         # print(x)
@@ -87,6 +102,9 @@ class Node:
     @threaded
     def source(self, FILE):
         global encoded_packets
+        global sync_nodes
+        global relays
+        global token
         # s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         # s.bind(('', 8500))
@@ -107,15 +125,25 @@ class Node:
         """
         #print(self.bufindex)
         while not DECODED:
-            #print("---Encoding---")
-            buf[self.bufindex] = encoder.encode()
-            encoded_packets += 1
-            print("Encoded Packets : " + str(encoded_packets))
+            lock.acquire()
+            if not sync_nodes < relays+1:
+                token = [1 for _ in range(relays+3)]        # Give one token to each node.
+                #print("---Encoding---")
+                buf[self.bufindex] = encoder.encode()
+                encoded_packets += 1
+                print("Encoded Packets : " + str(encoded_packets))
+
+                sync_nodes = 0
+            try:
+                lock.release()
+            finally: pass
             time.sleep(sleep_time)                    # DELAY INTRODUCED to synchronise Encoding and decoding.
 
     @threaded
     def relay(self):
         global DECODED
+        global sync_nodes
+        global lock
         # print(".........Decoding..")
 
         decoder_factory = kodo.FullVectorDecoderFactoryBinary(self.symbols, self.symbol_size)
@@ -124,16 +152,27 @@ class Node:
         #print(adr[1])
 
         while not DECODED:
-            #print("####Relay#### " + str(self.bufindex))
-            for i in range(relays-1):
+            lock.acquire()
+            if token[self.bufindex] == 1 :
+                sync_nodes += 1
+                token[self.bufindex] = 0
+            else:
+                try:
+                    lock.release()
+                finally: pass
+                continue
+            print("####Relay#### " + str(self.bufindex))
+            for i in range(relays+1):               # (relays+1) because encoder also produces packets
                 #sqrt((self.x - adr[i][0])**2 + (self.y - adr[i][1]))**2)
                 if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y) and not buf[i] == 0:
 #                if np.random.randint(100) >= (sqrt((self.x - adr[i][0])**2 + (self.y - adr[i][1])**2)) * 5 and not adr[i] == (self.x, self.y):
                     recoder.decode(buf[i])
                     buf[self.bufindex] = recoder.recode()
                     #print("Decoder Rank : " + str(decoder.rank()))
+            try:
+                lock.release()
+            finally: pass
             time.sleep(sleep_time)              # DELAY INTRODUCED to synchronise Encoding and decoding.
-
 
     @threaded
     def sink(self):
@@ -141,6 +180,8 @@ class Node:
         global DECODED
         global time_taken
         global decoded_packets
+        global sync_nodes
+        global lock
         # print(".........Decoding..")
 
         decoder_factory = kodo.FullVectorDecoderFactoryBinary(self.symbols, self.symbol_size)
@@ -148,6 +189,16 @@ class Node:
 
 
         while not decoder.is_complete():
+            lock.acquire()
+            if token[self.bufindex] == 1 :
+                sync_nodes += 1
+                token[self.bufindex] = 0
+                #print("###DECODER ###")
+            else:
+                try:
+                    lock.release()
+                finally: pass
+                continue
             for i in range(relays):
                 #print("##DECODER##")
                 #sqrt((self.x - adr[i][0])**2 + (self.y - adr[i][1]))**2)
@@ -156,6 +207,9 @@ class Node:
                     decoder.decode(buf[i])
                     decoded_packets += 1
                     print("Decoder Rank : " + str(decoder.rank()))
+            try:
+                lock.release()
+            finally: pass
             time.sleep(sleep_time)              # DELAY INTRODUCED to synchronise Encoding and decoding.
 
         if decoder.is_complete():
@@ -163,30 +217,8 @@ class Node:
             #print("DECODED")
             time_taken = time.time() - start
 
-# src = Node(0, 0, 0)
-# relay = Node(0, 20, 1)
-# snk = Node(0, 10, 2)
-#
-#
-# src.source("")
-# delay()
-# relay.relay()
-# delay()
-# snk.sink()
-# while not DECODED: pass
-#
-# delay()
-# print("\nTime Taken    : " + str(time_taken))
-# print("Min req packets : " + str(src.symbols))
-# print("Encoded Pkts : " + str(encoded_packets))
-# print("Decoded Pkts : " + str(decoded_packets))
-
 
 """------- Average Statistics (Text report) --------"""
-
-# src = Node(0, 0, 0)
-# relay = Node(0, 20, 1)
-# snk = Node(0, 10, 2)
 
 avg_time_taken = 0
 avg_encoded_packets = 0
@@ -197,8 +229,8 @@ iterations = 100
 for i in range(iterations):
     initialize()
     src = Node(0, 0, 0)
-    relay = Node(0, 20, 1)
-    snk = Node(0, 0.0000001, 2)
+    relay = Node(0, 21, 1)
+    snk = Node(0, 0.00000001, 2)
 
     src.source("")
     #delay()
@@ -206,7 +238,7 @@ for i in range(iterations):
     #delay()
     snk.sink()
     while not DECODED: pass
-    print("================------------------------- Encoded Pkts : " + str(encoded_packets))
+    print("==================------------------------- Encoded Pkts : " + str(encoded_packets))
     avg_time_taken += time_taken
     avg_encoded_packets += encoded_packets
     avg_decoded_packets += decoded_packets

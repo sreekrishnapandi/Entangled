@@ -1,47 +1,40 @@
-import kodo
-import kodo_helpers
-from PIL import Image
-import math
-import os
-import random
-import time
+import socket
+import struct
 import sys
 
-# Get directory of this file
-directory = os.path.dirname(os.path.realpath(__file__))
+message = 'very important data'
+multicast_group = ('224.3.29.71', 10000)
 
-# The name of the file to use for the test
-filename = 'lena.jpg'
+# Create the datagram socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-# Open the image convert it to RGB and get the height and width
-image = Image.open(os.path.join(directory, filename)).convert("RGB")
-image_width = image.size[0]
-image_height = image.size[1]
+# Set a timeout so the socket does not block indefinitely when trying
+# to receive data.
+sock.settimeout(5)
 
+# Set the time-to-live for messages to 1 so they do not go past the
+# local network segment.
+ttl = struct.pack('b', 1)
+sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
 
-canvas_width = image_width + image_height
+try:
 
+    # Send data to the multicast group
+    print >>sys.stderr, 'sending "%s"' % message
+    sent = sock.sendto(message, multicast_group)
 
-canvas = kodo_helpers.CanvasScreenEngine(
-    width=canvas_width,
-    height=image_height)
+    # Look for responses from all recipients
+    while True:
+        print >>sys.stderr, 'waiting to receive'
+        try:
+            data, server = sock.recvfrom(16)
+        except socket.timeout:
+            print >>sys.stderr, 'timed out, no more responses'
+            break
+        else:
+            print >>sys.stderr, 'received "%s" from %s' % (data, server)
 
-# Create the image viewer
-image_viewer = kodo_helpers.ImageViewer(
-    width=image_width,
-    height=image_height,
-    canvas=canvas)
-
-# Create the decoding coefficient viewer
-state_viewer = kodo_helpers.DecodeStateViewer(
-    size=image_height,
-    canvas=canvas,
-    canvas_position=(image_width, 0))
-
-
-canvas.start()
-time.sleep(1)
-image_viewer.set_image(image.tobytes())
-time.sleep(5)
-canvas.stop()
+finally:
+    print >>sys.stderr, 'closing socket'
+    sock.close()
 
