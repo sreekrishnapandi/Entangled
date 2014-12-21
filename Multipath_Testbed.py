@@ -110,6 +110,7 @@ class Node:
             #print("---Encoding---")
             buf[self.bufindex] = encoder.encode()
             encoded_packets += 1
+            print("Encoded Packets : " + str(encoded_packets))
             time.sleep(sleep_time)                    # DELAY INTRODUCED to synchronise Encoding and decoding.
 
     @threaded
@@ -154,7 +155,7 @@ class Node:
 #                if np.random.randint(100) >= (sqrt((self.x - adr[i][0])**2 + (self.y - adr[i][1])**2)) * 5 and not adr[i] == (self.x, self.y):
                     decoder.decode(buf[i])
                     decoded_packets += 1
-                    #print("Decoder Rank : " + str(decoder.rank()))
+                    print("Decoder Rank : " + str(decoder.rank()))
             time.sleep(sleep_time)              # DELAY INTRODUCED to synchronise Encoding and decoding.
 
         if decoder.is_complete():
@@ -191,18 +192,18 @@ avg_time_taken = 0
 avg_encoded_packets = 0
 avg_decoded_packets = 0
 
-iterations = 1000
+iterations = 100
 
 for i in range(iterations):
     initialize()
     src = Node(0, 0, 0)
     relay = Node(0, 20, 1)
-    snk = Node(0, 10, 2)
+    snk = Node(0, 0.0000001, 2)
 
     src.source("")
-    delay()
+    #delay()
     relay.relay()
-    delay()
+    #delay()
     snk.sink()
     while not DECODED: pass
     print("================------------------------- Encoded Pkts : " + str(encoded_packets))
@@ -211,9 +212,9 @@ for i in range(iterations):
     avg_decoded_packets += decoded_packets
 
 
-
 delay()
-print("\nTime Taken    : " + str(avg_time_taken/iterations))
+print("\nAverage of " + str(iterations) + " iterations")
+print("Time Taken    : " + str(avg_time_taken/iterations))
 print("Min req packets : " + str(src.symbols))
 print("Encoded Pkts : " + str(avg_encoded_packets/iterations))
 print("Decoded Pkts : " + str(avg_decoded_packets/iterations))
