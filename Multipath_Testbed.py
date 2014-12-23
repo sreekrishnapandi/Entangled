@@ -128,15 +128,17 @@ class Node:
             lock.acquire()
             if not sync_nodes < relays+1:
                 token = [1 for _ in range(relays+3)]        # Give one token to each node.
+                sync_nodes = 0
+                lock.release()
                 #print("---Encoding---")
                 buf[self.bufindex] = encoder.encode()
                 encoded_packets += 1
                 print("Encoded Packets : " + str(encoded_packets))
-
-                sync_nodes = 0
-            try:
-                lock.release()
-            finally: pass
+            else:               # if failed to release lock doe to prev condition
+                try:
+                    if lock.locked():
+                        lock.release()
+                finally: pass
             time.sleep(sleep_time)                    # DELAY INTRODUCED to synchronise Encoding and decoding.
 
     @threaded
@@ -158,20 +160,23 @@ class Node:
                 token[self.bufindex] = 0
             else:
                 try:
-                    lock.release()
+                    if lock.locked():
+                        lock.release()
                 finally: pass
                 continue
+            try:
+                if lock.locked():
+                    lock.release()
+            finally: pass
+
             print("####Relay#### " + str(self.bufindex))
             for i in range(relays+1):               # (relays+1) because encoder also produces packets
                 #sqrt((self.x - adr[i][0])**2 + (self.y - adr[i][1]))**2)
                 if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y) and not buf[i] == 0:
-#                if np.random.randint(100) >= (sqrt((self.x - adr[i][0])**2 + (self.y - adr[i][1])**2)) * 5 and not adr[i] == (self.x, self.y):
                     recoder.decode(buf[i])
                     buf[self.bufindex] = recoder.recode()
                     #print("Decoder Rank : " + str(decoder.rank()))
-            try:
-                lock.release()
-            finally: pass
+
             time.sleep(sleep_time)              # DELAY INTRODUCED to synchronise Encoding and decoding.
 
     @threaded
@@ -196,9 +201,15 @@ class Node:
                 #print("###DECODER ###")
             else:
                 try:
-                    lock.release()
+                    if lock.locked():
+                        lock.release()
                 finally: pass
                 continue
+            try:
+                if lock.locked():
+                        lock.release()
+            finally: pass
+
             for i in range(relays):
                 #print("##DECODER##")
                 #sqrt((self.x - adr[i][0])**2 + (self.y - adr[i][1]))**2)
@@ -207,9 +218,7 @@ class Node:
                     decoder.decode(buf[i])
                     decoded_packets += 1
                     print("Decoder Rank : " + str(decoder.rank()))
-            try:
-                lock.release()
-            finally: pass
+
             time.sleep(sleep_time)              # DELAY INTRODUCED to synchronise Encoding and decoding.
 
         if decoder.is_complete():
