@@ -61,6 +61,7 @@ def initialize():
     global free_socket
     global start_socket
     global nxt_bufIndex
+    global RECODE
 
     DECODED = False
     buf = [0 for _ in range(20)]
@@ -76,6 +77,7 @@ def initialize():
     free_socket = 3000
     start_socket = 3000
     nxt_bufIndex = 0
+    RECODE = True
 
 
 def delay(): time.sleep(0.001)
@@ -145,6 +147,7 @@ class Node:
     @threaded
     def relay(self):
         global DECODED
+        global RECODE
 
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -158,20 +161,37 @@ class Node:
 
         #print(adr[1])
 
-        while not DECODED:
-            # print("####Relay#### " + str(self.bufindex))
-            try:
-                rcv = s.recvfrom(180)[0]
-                recoder.decode(rcv)
-            except socket.timeout:
-                pass
-            pkt = recoder.recode()
-            for i in range(relays+2):               # (relays+1) because encoder also produces packets
-                if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
-                    s.sendto(pkt, ('', start_socket + i))
-                    #print("Decoder Rank : " + str(decoder.rank()))
+        if RECODE:
+            while not DECODED:
+                # print("####Relay#### " + str(self.bufindex))
+                try:
+                    rcv = s.recvfrom(180)[0]
+                    recoder.decode(rcv)
+                except socket.timeout:
+                    pass
+                pkt = recoder.recode()
+                for i in range(relays+2):               # (relays+1) because encoder also produces packets
+                    if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+                        s.sendto(pkt, ('', start_socket + i))
+                        #print("Decoder Rank : " + str(decoder.rank()))
 
-            #time.sleep(sleep_time)                    # DELAY INTRODUCED to synchronise Encoding and decoding.
+                 #time.sleep(sleep_time)                    # DELAY INTRODUCED to synchronise Encoding and decoding.
+        else:
+            while not DECODED:
+                # print("####Relay#### " + str(self.bufindex))
+                try:
+                    rcv = s.recvfrom(180)[0]
+                    pkt = rcv
+                    for i in range(relays+2):               # (relays+1) because encoder also produces packets
+                        if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+                            s.sendto(pkt, ('', start_socket + i))
+                            #print("Decoder Rank : " + str(decoder.rank()))
+
+                except socket.timeout:
+                    pass
+
+                #time.sleep(sleep_time)                    # DELAY INTRODUCED to synchronise Encoding and decoding.
+
         s.close()
 
     @threaded
@@ -214,11 +234,13 @@ class Node:
 avg_time_taken = 0
 avg_encoded_packets = 0
 avg_decoded_packets = 0
+global RECODE
 
-iterations = 500
+iterations = 100
 
 for i in range(iterations):
     initialize()
+    RECODE = False
     relays = 3
     src = Node(0, 0)
     snk = Node(0, 19)
