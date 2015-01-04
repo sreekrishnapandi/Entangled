@@ -119,6 +119,7 @@ class Node:
     @threaded
     def relay(self):
         global RECODE
+        prev_rank = 0
 
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -136,10 +137,19 @@ class Node:
             while not Node.DECODED:
                 # print("####Relay#### " + str(self.bufindex))
                 try:
-                    rcv = s.recvfrom(180)[0]
-                    recoder.decode(rcv)
+                    rcv = s.recvfrom(180)
+                    self.contribution[(rcv[1][1])-3000] += 1
+                    recoder.decode(rcv[0])
+                    rank = recoder.rank()
+                    if prev_rank < rank:
+                        self.innov_contribution[(rcv[1][1])-3000] += 1
+                    else:
+                        self.redundant_pkts[(rcv[1][1])-3000] += 1
+                        #lin_dep_pkts += 1
+                    prev_rank = rank
                 except socket.timeout:
                     pass
+
                 pkt = recoder.recode()
                 for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
                     if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
@@ -152,8 +162,9 @@ class Node:
             while not Node.DECODED:
                 # print("####Relay#### " + str(self.bufindex))
                 try:
-                    rcv = s.recvfrom(180)[0]
-                    pkt = rcv
+                    rcv = s.recvfrom(180)
+                    self.contribution[(rcv[1][1])-3000] += 1
+                    pkt = rcv[0]
                     for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
                         if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
                             s.sendto(pkt, ('', start_socket + i))

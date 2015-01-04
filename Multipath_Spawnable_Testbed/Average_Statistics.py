@@ -30,9 +30,8 @@ def avg_statistics():
         src = Node(0, 0)
         snk = Node(0, 19)
         relay1 = Node(0, 16)
-        #relay2 = Node(7, 10)
-        #relay3 = Node(5, 15)
-        #relay4 = Node(5, 5)
+        relay2 = Node(7, 10)
+        relay3 = Node(5, 15)
 
         src.source("")
         snk.sink()
@@ -87,6 +86,9 @@ def avg_statistics():
     print("Contr. in Decoder : " + str(avg_contr_dec))
     print("Innov Contr. in Decoder : " + str(avg_innov_contr_dec))
     print("Redund. Pkts in Decoder : " + str(avg_redund_dec))
+    print("Contribution in Relay 1 : " + str(avg_contr_rel1))
+    print("Innov Contr. in Relay 1 : " + str(avg_innov_contr_rel1))
+    print("Redund. Pkts in Relay 1 : " + str(avg_redund_rel1))
 
 
 avg_statistics()
