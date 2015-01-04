@@ -36,11 +36,11 @@ def avg_statistics():
     for i in range(iterations):
         initialize()
 
-        src = Node(0, 0)
-        snk = Node(0, 19)
-        relay1 = Node(3, 5)
-        relay2 = Node(7, 10)
-        relay3 = Node(3, 15)
+        src = Node(10, 0)
+        snk = Node(10, 19)
+        relay1 = Node(5, 5)
+        relay2 = Node(10, 10)
+        relay3 = Node(15, 15)
 
         src.source("")
         snk.sink()
@@ -82,9 +82,9 @@ def avg_statistics():
     print("Sink    : (" + str(snk.x) + ", " + str(snk.y) + ")")
     print("Relays  : " + str(Node.relayz))
 
-    # print("Relay 1 : (" + str(relay1.x) + ", " + str(relay1.y) + ")")
-    # print("Relay 2 : (" + str(relay2.x) + ", " + str(relay2.y) + ")")
-    # print("Relay 3 : (" + str(relay3.x) + ", " + str(relay3.y) + ")")
+    print("Relay 1 : (" + str(relay1.x) + ", " + str(relay1.y) + ")")
+    print("Relay 2 : (" + str(relay2.x) + ", " + str(relay2.y) + ")")
+    print("Relay 3 : (" + str(relay3.x) + ", " + str(relay3.y) + ")")
 
     for i in range(Node.relayz+2):
         avg_contr_dec[i] /= iterations
@@ -132,18 +132,21 @@ def avg_statistics():
     plt.bar([0, 1, 2, 3, 4], avg_redund_dec, bottom=avg_innov_contr_dec, color='#B2182B', label='Redundant Pkts')
     plt.xticks([0.5, 1.5, 2.5, 3.5, 4.5], ['Enc', 'Dec', 'R1', 'R2', 'R3'])
     plt.ylabel("Packets")
+    plt.xlabel("Decoder")
     plt.legend(loc='upper left')
 
     plt.subplot(142)
     plt.bar([0, 1, 2, 3, 4], avg_innov_contr_rel1, color='#2166AC', label='Innovative Pkts')
     plt.bar([0, 1, 2, 3, 4], avg_redund_rel1, bottom=avg_innov_contr_rel1, color='#B2182B', label='Redundant Pkts')
     plt.xticks([0.5, 1.5, 2.5, 3.5, 4.5], ['Enc', 'Dec', 'R1', 'R2', 'R3'])
+    plt.xlabel("Relay 1")
     plt.ylabel("Packets")
 
     plt.subplot(143)
     plt.bar([0, 1, 2, 3, 4], avg_innov_contr_rel2, color='#2166AC', label='Innovative Pkts')
     plt.bar([0, 1, 2, 3, 4], avg_redund_rel2, bottom=avg_innov_contr_rel2, color='#B2182B', label='Redundant Pkts')
     plt.xticks([0.5, 1.5, 2.5, 3.5, 4.5], ['Enc', 'Dec', 'R1', 'R2', 'R3'])
+    plt.xlabel("Relay 2")
     plt.ylabel("Packets")
 
     plt.subplot(144)
@@ -151,6 +154,7 @@ def avg_statistics():
     plt.bar([0, 1, 2, 3, 4], avg_redund_rel3, bottom=avg_innov_contr_rel3, color='#B2182B', label='Redundant Pkts')
     plt.xticks([0.5, 1.5, 2.5, 3.5, 4.5], ['Enc', 'Dec', 'R1', 'R2', 'R3'])
     plt.ylabel("Packets")
+    plt.xlabel("Relay 3")
 
     plt.subplots_adjust(left=0.04, right=0.98)
     plt.show()
