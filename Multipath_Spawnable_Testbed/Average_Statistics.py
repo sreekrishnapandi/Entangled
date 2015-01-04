@@ -6,8 +6,7 @@ from Multipath_Socket_Testbed import *
 
 
 def avg_statistics():
-    global RECODE
-    RECODE = True
+    Node.RECODE = True
     Node.relayz = 3
 
     avg_time_taken = 0

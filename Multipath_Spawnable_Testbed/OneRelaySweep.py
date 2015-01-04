@@ -9,7 +9,6 @@ def OneRelay(x, y):
     :param y: Y coordinate
     :return: avg_time_taken, avg_encoded_packets, avg_relayed_packets, avg_decoded_packets
     """
-    global RECODE
     Node.relayz = 1
 
     avg_time_taken = 0
@@ -29,8 +28,7 @@ def OneRelay(x, y):
     for i in range(iterations):
         initialize()
 
-        RECODE = False
-
+        Node.RECODE = False
 
         src = Node(0, 0)
         snk = Node(0, 19)

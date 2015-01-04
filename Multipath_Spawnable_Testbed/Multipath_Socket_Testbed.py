@@ -37,7 +37,7 @@ def initialize():
     free_socket = 3000
     start_socket = 3000
     nxt_bufIndex = 0
-    RECODE = True
+    RECODE = False
 
 
 def delay(): time.sleep(0.001)
@@ -118,7 +118,6 @@ class Node:
 
     @threaded
     def relay(self):
-        global RECODE
         prev_rank = 0
 
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -133,7 +132,7 @@ class Node:
 
         #print(adr[1])
 
-        if RECODE:
+        if Node.RECODE:
             while not Node.DECODED:
                 # print("####Relay#### " + str(self.bufindex))
                 try:
@@ -235,7 +234,7 @@ class Node:
 #
 # def avg_statistics():
 #     global RECODE
-#     RECODE = True
+#     Node.RECODE = True
 #     Node.relayz = 1
 #
 #     avg_time_taken = 0
@@ -335,7 +334,7 @@ class Node:
 #     for i in range(iterations):
 #         initialize()
 #
-#         RECODE = True
+#         Node.RECODE = True
 #         Node.relayz = 1
 #
 #         src = Node(0, 0)
