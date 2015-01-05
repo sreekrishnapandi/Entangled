@@ -50,6 +50,7 @@ class Node:
     encoded_packets = 0
     decoded_packets = 0
     relayed_pkts = 0
+    RelayOnlyWhenRecieved = False
 
     def __init__(self, x, y):
         global free_socket
@@ -146,17 +147,26 @@ class Node:
                         self.redundant_pkts[(rcv[1][1])-3000] += 1
                         #lin_dep_pkts += 1
                     prev_rank = rank
+                    if Node.RelayOnlyWhenRecieved:
+                        pkt = recoder.recode()
+                        for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
+                            if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+                                s.sendto(pkt, ('', start_socket + i))
+                                #print("Recoder Rank : " + str(recoder.rank()))
+                        Node.relayed_pkts += 1
+
                 except socket.timeout:
                     pass
 
-                pkt = recoder.recode()
-                for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
-                    if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
-                        s.sendto(pkt, ('', start_socket + i))
-                        #print("Recoder Rank : " + str(recoder.rank()))
-                Node.relayed_pkts += 1
-
-                 #time.sleep(sleep_time)                    # DELAY INTRODUCED to synchronise Encoding and decoding.
+                if not Node.RelayOnlyWhenRecieved:
+                    pkt = recoder.recode()
+                    for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
+                        if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+                            s.sendto(pkt, ('', start_socket + i))
+                            #print("Recoder Rank : " + str(recoder.rank()))
+                    Node.relayed_pkts += 1
+                #delay()
+                #time.sleep(sleep_time)                    # DELAY INTRODUCED to synchronise Encoding and decoding.
         else:
             while not Node.DECODED:
                 # print("####Relay#### " + str(self.bufindex))
@@ -218,7 +228,7 @@ class Node:
             except socket.timeout:
                 pass
 
-            # delay()
+            #delay()
             #time.sleep(sleep_time)              # DELAY INTRODUCED to synchronise Encoding and decoding.
         s.close()
 

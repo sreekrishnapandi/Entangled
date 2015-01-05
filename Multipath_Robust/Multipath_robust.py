@@ -23,7 +23,7 @@ def multipath_switch_recoding(FILE, recode, link1, link2, link3, link4, link12, 
 
     f = open(FILE, 'rb')
 
-    symbol_size = 32
+    symbol_size = 128
     symbols = 60
 
     encoder_factory = kodo.FullVectorEncoderFactoryBinary(symbols, symbol_size)

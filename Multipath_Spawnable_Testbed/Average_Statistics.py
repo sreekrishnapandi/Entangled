@@ -7,6 +7,7 @@ from Multipath_Socket_Testbed import *
 
 def avg_statistics():
     Node.RECODE = True
+    Node.RelayOnlyWhenRecieved = True
     Node.relayz = 3
 
     avg_time_taken = 0
@@ -73,7 +74,10 @@ def avg_statistics():
             avg_innov_contr_rel3[i] += relay3.innov_contribution[i]
             avg_redund_rel3[i] += relay3.redundant_pkts[i]
 
-
+        delay()
+        delay()
+        delay()
+        delay()
         delay()                     # To wait for OS to close the sockets , so that its available for next iteration
 
     delay()
@@ -156,7 +160,7 @@ def avg_statistics():
     plt.xlabel("Relay 3")
 
     plt.subplots_adjust(left=0.04, right=0.98)
-    plt.show()
+    #plt.show()
 
 
 avg_statistics()
