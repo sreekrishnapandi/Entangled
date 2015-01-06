@@ -160,7 +160,7 @@ def avg_statistics():
     plt.xlabel("Relay 3")
 
     plt.subplots_adjust(left=0.04, right=0.98)
-    #plt.show()
+    plt.show()
 
 
 avg_statistics()

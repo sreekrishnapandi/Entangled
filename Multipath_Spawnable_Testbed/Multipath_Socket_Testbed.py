@@ -43,6 +43,9 @@ def initialize():
 def delay(): time.sleep(0.001)
 
 
+def txdelay(): time.sleep(0.005)
+
+
 class Node:
     relayz = 0
     DECODED = False
@@ -106,6 +109,7 @@ class Node:
             #print("---Encoding---")
             pkt = encoder.encode()
             #print(pkt)
+            txdelay()
             for i in range(Node.relayz+2):
                 if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
                     s.sendto(pkt, ('', start_socket + i))
@@ -143,23 +147,27 @@ class Node:
                     rank = recoder.rank()
                     if prev_rank < rank:
                         self.innov_contribution[(rcv[1][1])-3000] += 1
+
+                        if Node.RelayOnlyWhenRecieved:
+                            pkt = recoder.recode()
+
+                            txdelay()
+                            for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
+                                if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+                                    s.sendto(pkt, ('', start_socket + i))
+                                    #print("Recoder Rank : " + str(recoder.rank()))
+                            Node.relayed_pkts += 1
                     else:
                         self.redundant_pkts[(rcv[1][1])-3000] += 1
                         #lin_dep_pkts += 1
                     prev_rank = rank
-                    if Node.RelayOnlyWhenRecieved:
-                        pkt = recoder.recode()
-                        for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
-                            if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
-                                s.sendto(pkt, ('', start_socket + i))
-                                #print("Recoder Rank : " + str(recoder.rank()))
-                        Node.relayed_pkts += 1
 
                 except socket.timeout:
                     pass
 
                 if not Node.RelayOnlyWhenRecieved:
                     pkt = recoder.recode()
+                    txdelay()
                     for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
                         if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
                             s.sendto(pkt, ('', start_socket + i))
@@ -174,6 +182,7 @@ class Node:
                     rcv = s.recvfrom(180)
                     self.contribution[(rcv[1][1])-3000] += 1
                     pkt = rcv[0]
+                    txdelay()
                     for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
                         if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
                             s.sendto(pkt, ('', start_socket + i))
