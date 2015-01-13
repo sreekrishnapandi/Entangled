@@ -33,6 +33,8 @@ def avg_statistics():
     avg_innov_contr_rel3 = [0 for _ in range(Node.relayz+2)]
     avg_redund_rel3 = [0 for _ in range(Node.relayz+2)]
 
+    avg_indiv_relayed_pkts = [0 for _ in range(Node.relayz+2)]
+
     iterations = 20
 
     for i in range(iterations):
@@ -45,15 +47,15 @@ def avg_statistics():
         relay3 = Node(15, 15)
         #master = Node(0, 0)
 
-        src.txprob = 42
-        relay1.txprob = 42
-        relay2.txprob = 62
-        relay3.txprob = 46
+        # src.txprob = 42
+        # relay1.txprob = 42
+        # relay2.txprob = 62
+        # relay3.txprob = 46
 
-        # src.txprob = 100
-        # relay1.txprob = 100
-        # relay2.txprob = 100
-        # relay3.txprob = 100
+        src.txprob = 100
+        relay1.txprob = 100
+        relay2.txprob = 100
+        relay3.txprob = 100
 
         #master.master()
 
@@ -93,6 +95,8 @@ def avg_statistics():
             avg_innov_contr_rel3[i] += relay3.innov_contribution[i]
             avg_redund_rel3[i] += relay3.redundant_pkts[i]
 
+            avg_indiv_relayed_pkts[i] += Node.indiv_relayed_pkts[i]
+
         delay()
         delay()
         delay()
@@ -125,6 +129,8 @@ def avg_statistics():
         avg_innov_contr_rel3[i] /= iterations
         avg_redund_rel3[i] /= iterations
 
+        avg_indiv_relayed_pkts[i] /= iterations
+
     # for i in range(65):
     #         avg_dec_LD_profile[i] /= iterations
 
@@ -134,6 +140,7 @@ def avg_statistics():
     print("Encoded Pkts : " + str(avg_encoded_packets/iterations))
     print("Relayed Pkts : " + str(avg_relayed_packets/iterations))
     print("Decoded Pkts : " + str(avg_decoded_packets/iterations))
+    print("Iniv. Relayed Pkts : " + str(avg_indiv_relayed_pkts))
 
     print("\nContribution in Decoder : " + str(avg_contr_dec))
     print("Innov Contr. in Decoder : " + str(avg_innov_contr_dec))
