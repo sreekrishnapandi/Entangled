@@ -41,9 +41,10 @@ def initialize():
     nxt_bufIndex = 0
     RECODE = False
     Node.Dec_LD_profile = [0 for _ in range(65)]
+    Node.start = False
 
 
-def delay(): time.sleep(0.001)
+def delay(): time.sleep(0.01)
 
 
 def txdelay(): time.sleep(0.005)
@@ -59,6 +60,7 @@ class Node:
     RelayOnlyWhenRecieved = False
     Dec_LD_profile = [0 for _ in range(65)]
     staticPause = 0
+    start = False
 
     def __init__(self, x, y):
         global free_socket
@@ -116,6 +118,32 @@ class Node:
         return done
 
     @threaded
+    def master(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(('', self.sockID))
+        s.settimeout(0.0001)
+
+        # print(".........Decoding..")
+
+        decoder_factory = kodo.FullVectorDecoderFactoryBinary8(self.symbols, self.symbol_size)
+        decoder = decoder_factory.build()
+
+        while not decoder.is_complete():
+            #print(self.pause_list)
+            try:
+                rcv = s.recvfrom(180)
+                decoder.decode(rcv[0])
+
+            except socket.timeout:
+                pass
+
+        s.sendto("DIE", ('', 3000))
+        s.close()
+
+
+
+    @threaded
     def source(self, FILE):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -142,6 +170,10 @@ class Node:
                 rcv = s.recvfrom(180)
                 # if rcv[0] == "SHUTUP":
                 #     self.pause(rcv[1][1])
+                if rcv[0] == "DIE":
+                    print("Dying..")
+                    break
+
                 if rcv[0] == "IMDONE":
                     self.doneList[rcv[1][1]-3000] = 1
                     if self.isDone():
@@ -167,7 +199,9 @@ class Node:
 
             #delay()
             #time.sleep(sleep_time)                    # DELAY INTRODUCED to synchronise Encoding and decoding.
-        #print("Encoder Stopped")
+        print("Encoder Stopped")
+
+        Node.start = True
         s.close()
 
 
@@ -188,11 +222,40 @@ class Node:
 
         #print(adr[1])
 
+        while Node.start == False :
+            try:
+                rcv = s.recvfrom(180)
+                if rcv[0] == "SHUTUP":
+                    self.pause(rcv[1][1])
+                    #print(self.pause_list)
+                    continue
+                s.sendto(rcv[0], ('', 3005))
+
+                self.contribution[(rcv[1][1])-3000] += 1
+                recoder.decode(rcv[0])
+                rank = recoder.rank()
+                if prev_rank < rank:
+                    self.innov_contribution[(rcv[1][1])-3000] += 1
+                else:
+                    self.redundant_pkts[(rcv[1][1])-3000] += 1
+                    #lin_dep_pkts += 1
+                    i = (rcv[1][1])-3000
+
+                    if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+                        self.shutup(s, rcv[1][1])
+
+                    if (rcv[1][1]) == 3000 and recoder.is_complete():
+                        self.imDone(s, rcv[1][1])
+                    #print(self.pause_list)
+
+            except socket.timeout:
+                pass
+
+
+
+
         while not Node.DECODED:
-            #print(self.pause_list)
-            #print("####Relay#### " + str(self.bufindex))
-            # if recoder.is_complete():
-            #     print("IM DONEEEE")
+
             try:
                 rcv = s.recvfrom(180)
                 if rcv[0] == "SHUTUP":
@@ -219,8 +282,8 @@ class Node:
 
             except socket.timeout:
                 pass
-
-            if prev_rank < rank or recoder.is_complete():
+            if prev_rank < rank or recoder.is_complete() or Node.start:
+                print("Recodinr..")
                 pkt = recoder.recode()
                 #print("recoding.......")
 

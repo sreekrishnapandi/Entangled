@@ -1,6 +1,6 @@
 __author__ = 'Krish'
 
-from Multipath_Socket_Testbed_GodsEye import *
+from Multipath_Socket_Testbed2 import *
 
 """------- Average Statistics (Text report) --------"""
 
@@ -43,19 +43,19 @@ def avg_statistics():
         relay1 = Node(5, 5)
         relay2 = Node(10, 10)
         relay3 = Node(15, 15)
-        master = Node(0, 0)
+        #master = Node(0, 0)
 
-        # src.txprob = 42
-        # relay1.txprob = 42
-        # relay2.txprob = 62
-        # relay3.txprob = 46
+        src.txprob = 42
+        relay1.txprob = 42
+        relay2.txprob = 62
+        relay3.txprob = 46
 
-        src.txprob = 100
-        relay1.txprob = 100
-        relay2.txprob = 100
-        relay3.txprob = 100
+        # src.txprob = 100
+        # relay1.txprob = 100
+        # relay2.txprob = 100
+        # relay3.txprob = 100
 
-        master.master()
+        #master.master()
 
         src.source("")
         snk.sink()

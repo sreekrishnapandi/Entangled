@@ -7,6 +7,8 @@ from math import sqrt
 import threading
 import time
 import socket
+from operator import mul
+
 from matplotlib import pyplot as plt
 from prettytable import PrettyTable
 
@@ -38,6 +40,7 @@ def initialize():
     start_socket = 3000
     nxt_bufIndex = 0
     RECODE = False
+    Node.Dec_LD_profile = [0 for _ in range(65)]
 
 
 def delay(): time.sleep(0.001)
@@ -54,6 +57,8 @@ class Node:
     decoded_packets = 0
     relayed_pkts = 0
     RelayOnlyWhenRecieved = False
+    Dec_LD_profile = [0 for _ in range(65)]
+    staticPause = 0
 
     def __init__(self, x, y):
         global free_socket
@@ -64,11 +69,13 @@ class Node:
         self.bufindex = nxt_bufIndex
         nxt_bufIndex += 1
         lock.release()
+        self.txprob = 1
 
         self.contribution = [0 for _ in range(Node.relayz+2)]        # [encoder, decoder, relay1, relay2, ...]
         self.innov_contribution = [0 for _ in range(Node.relayz+2)]  # [encoder, decoder, relay1, relay2, ...]
         self.redundant_pkts = [0 for _ in range(Node.relayz+2)]      # [encoder, decoder, relay1, relay2, ...]
         self.pause_list = [0 for _ in range(Node.relayz+2)]
+        self.doneList = [0 for _ in range(Node.relayz+2)]
 
         self.x = x
         self.y = y
@@ -86,10 +93,21 @@ class Node:
         return distance
 
     def pause(self, nodeID):
-        self.pause_list[nodeID-3000] = 5
+        self.pause_list[nodeID-3000] = Node.staticPause
 
     def shutup(self, s, nodeID):
         s.sendto("SHUTUP", ('', nodeID))
+
+    def imDone(self, s, nodeID):
+        s.sendto("IM DONE", ('', nodeID))
+
+    def isPaused(self):
+        prd = 0
+        for i in range(1, Node.relayz+2):
+            if not i == self.bufindex:
+                prd += self.pause_list[i]
+        return prd
+
 
     @threaded
     def source(self, FILE):
@@ -98,7 +116,7 @@ class Node:
         s.bind(('', self.sockID))
         s.settimeout(0.0001)
 
-        encoder_factory = kodo.FullVectorEncoderFactoryBinary(self.symbols, self.symbol_size)
+        encoder_factory = kodo.FullVectorEncoderFactoryBinary8(self.symbols, self.symbol_size)
         encoder = encoder_factory.build()
 
         if not FILE == "":
@@ -116,8 +134,8 @@ class Node:
         while not Node.DECODED:
             try:
                 rcv = s.recvfrom(180)
-                if rcv[0] == "SHUTUP":
-                    self.pause(rcv[1][1])
+                # if rcv[0] == "SHUTUP":
+                #     self.pause(rcv[1][1])
             except socket.timeout:
                 pass
 
@@ -125,14 +143,16 @@ class Node:
             pkt = encoder.encode()
             #print(pkt)
             txdelay()
-            for i in range(Node.relayz+2):
-                if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
-                    if not self.pause_list[i] > 0:      # To pause
-                        s.sendto(pkt, ('', start_socket + i))
-                        Node.encoded_packets += 1
-                    else:
-                        self.pause_list[i] -= 1
-            #Node.encoded_packets += 1
+            if np.random.randint(100) <= self.txprob:
+                for i in range(Node.relayz+2):
+                    if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+                        if not self.pause_list[i] > 0:      # To pause
+
+                                s.sendto(pkt, ('', start_socket + i))
+                        else:
+                            self.pause_list[i] -= 1
+                if not self.isPaused():
+                    Node.encoded_packets += 1
             #print("Encoded Packets : " + str(encoded_packets))
 
             #delay()
@@ -151,7 +171,7 @@ class Node:
 
         # print(".........Decoding..")
 
-        decoder_factory = kodo.FullVectorDecoderFactoryBinary(self.symbols, self.symbol_size)
+        decoder_factory = kodo.FullVectorDecoderFactoryBinary8(self.symbols, self.symbol_size)
         recoder = decoder_factory.build()
 
         #print(adr[1])
@@ -160,6 +180,8 @@ class Node:
             while not Node.DECODED:
                 #print(self.pause_list)
                 #print("####Relay#### " + str(self.bufindex))
+                # if recoder.is_complete():
+                #     print("IM DONEEEE")
                 try:
                     rcv = s.recvfrom(180)
                     if rcv[0] == "SHUTUP":
@@ -177,21 +199,31 @@ class Node:
                             pkt = recoder.recode()
 
                             txdelay()
-                            for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
-                                if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
-                                    if not self.pause_list[i] > 0:      # To pause
-                                        s.sendto(pkt, ('', start_socket + i))
-                                        Node.relayed_pkts += 1
-                                    else:
-                                        self.pause_list[i] -= 1
-                                        #print(self.pause_list)
+                            if np.random.randint(100) <= self.txprob:
+                                for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
+                                    if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+                                        if not self.pause_list[i] > 0:      # To pause
+                                            if not self.isPaused():
+                                                s.sendto(pkt, ('', start_socket + i))
+                                            #Node.relayed_pkts += 1
+                                        else:
+                                            self.pause_list[i] -= 1
+                                            #print(self.pause_list)
 
-                                    #print("Recoder Rank : " + str(recoder.rank()))
-                            #Node.relayed_pkts += 1
+                                        #print("Recoder Rank : " + str(recoder.rank()))
+                                if not self.isPaused():
+                                    #print("BAAAAAA")
+                                    Node.relayed_pkts += 1
+                                # else:
+                                #     print("BAAAAAA")
                     else:
                         self.redundant_pkts[(rcv[1][1])-3000] += 1
                         #lin_dep_pkts += 1
-                        self.shutup(s, rcv[1][1])
+                        i = (rcv[1][1])-3000
+                        if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+                            self.shutup(s, rcv[1][1])
+                        if (rcv[1][1]) == 3000:
+                            self.imDone(s, rcv[1][1])
                         #print(self.pause_list)
                     prev_rank = rank
 
@@ -246,7 +278,7 @@ class Node:
 
         # print(".........Decoding..")
 
-        decoder_factory = kodo.FullVectorDecoderFactoryBinary(self.symbols, self.symbol_size)
+        decoder_factory = kodo.FullVectorDecoderFactoryBinary8(self.symbols, self.symbol_size)
         decoder = decoder_factory.build()
 
         while not decoder.is_complete():
@@ -256,6 +288,7 @@ class Node:
 
                 if rcv[0] == "SHUTUP":
                     self.pause(rcv[1][1])
+
                     continue
 
                 # print(contribution)
@@ -268,7 +301,10 @@ class Node:
                     self.innov_contribution[(rcv[1][1])-3000] += 1
                 else:
                     self.redundant_pkts[(rcv[1][1])-3000] += 1
-                    self.shutup(s, rcv[1][1])
+                    i = (rcv[1][1])-3000
+                    if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+                        self.shutup(s, rcv[1][1])
+                    Node.Dec_LD_profile[rank] += 1
                     #lin_dep_pkts += 1
 
                 prev_rank = rank
