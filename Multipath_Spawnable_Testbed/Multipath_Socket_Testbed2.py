@@ -41,12 +41,14 @@ def initialize():
     nxt_bufIndex = 0
     RECODE = False
     Node.Dec_LD_profile = [0 for _ in range(65)]
+    Node.indiv_relayed_pkts = [0 for _ in range(Node.relayz+2)]
 
 
 def delay(): time.sleep(0.001)
 
 
-def txdelay(): time.sleep(0.005)
+#def txdelay(): time.sleep(0.005)
+def txdelay(): time.sleep(0.00)
 
 
 class Node:
@@ -56,6 +58,7 @@ class Node:
     encoded_packets = 0
     decoded_packets = 0
     relayed_pkts = 0
+    indiv_relayed_pkts = [0 for _ in range(relayz+2)]
     RelayOnlyWhenRecieved = False
     Dec_LD_profile = [0 for _ in range(65)]
     staticPause = 0
@@ -112,7 +115,7 @@ class Node:
         done = 1
         for i in range(2, Node.relayz+2):
             done *= self.doneList[i]
-            print(self.doneList)
+            #print(self.doneList)
         return done
 
     @threaded
@@ -240,6 +243,7 @@ class Node:
                     if not self.isPaused():
                         #print("BAAAAAA")
                         Node.relayed_pkts += 1
+                        Node.indiv_relayed_pkts[self.bufindex] += 1
                     # else:
                     #     print("BAAAAAA")
 
