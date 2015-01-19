@@ -1,5 +1,5 @@
 __author__ = 'Krish'
-from Multipath_Socket_Testbed import *
+from Multipath_Socket_Testbed2 import *
 
 
 def OneRelay(x, y):
@@ -28,7 +28,7 @@ def OneRelay(x, y):
     for i in range(iterations):
         initialize()
 
-        Node.RECODE = False
+        #Node.RECODE = False
 
         src = Node(0, 0)
         snk = Node(0, 19)
@@ -45,7 +45,7 @@ def OneRelay(x, y):
         #relay4.relay()
 
         while not Node.DECODED: pass
-        #print("==================------------------------- Encoded Pkts : " + str(encoded_packets))
+        print("==================------------------------- Encoded Pkts : " + str(Node.encoded_packets))
         avg_time_taken += Node.time_taken
         avg_encoded_packets += Node.encoded_packets
         avg_decoded_packets += Node.decoded_packets
@@ -95,7 +95,7 @@ def OneRelay(x, y):
 """  ###########--- Sweep One Relay from Source to destination and plot the Statistics ---#########  """
 list_time = []
 list_encoded_packets = []
-list_relyed_packets = []
+list_relayed_packets = []
 list_decoded_packets = []
 list_cont_dec = []
 list_innov_cont_dec = []
@@ -103,40 +103,109 @@ list_red_dec = []
 list_cont_rel1 = []
 list_innov_cont_rel1 = []
 list_red_rel1 = []
+list_total_packets = []
+
+list_time2 = []
+list_encoded_packets2 = []
+list_relayed_packets2= []
+list_decoded_packets2 = []
+list_cont_dec2 = []
+list_innov_cont_dec2 = []
+list_red_dec2 = []
+list_cont_rel12 = []
+list_innov_cont_rel12 = []
+list_red_rel12 = []
+list_total_packets2 = []
+
 index = []
 
-for i in range(1, 25):
-    timetaken, encoded_packets, relyed_packets, decoded_packets, cont_dec, innov_cont_dec, red_dec, cont_rel1, \
-    innov_cont_rel1, red_rel1 = OneRelay(7, i)
+for i in range(1, 19):
+
+    Node.RECODE = True
+    timetaken, encoded_packets, relayed_packets, decoded_packets, cont_dec, innov_cont_dec, red_dec, cont_rel1, \
+    innov_cont_rel1, red_rel1 = OneRelay(0, i)
 
     list_time.append(timetaken)
     list_encoded_packets.append(encoded_packets)
     list_decoded_packets.append(decoded_packets)
-    list_relyed_packets.append(relyed_packets)
+    list_relayed_packets.append(relayed_packets)
     list_cont_dec.append(cont_dec)
     list_innov_cont_dec.append(innov_cont_dec)
     list_red_dec.append(red_dec)
     list_cont_rel1.append(cont_rel1)
     list_innov_cont_rel1.append(innov_cont_rel1)
     list_red_rel1.append(red_rel1)
+    list_total_packets.append(encoded_packets + relayed_packets)
     index.append(i)
 
+    Node.RECODE = False
+
+    # timetaken, encoded_packets, relayed_packets, decoded_packets, cont_dec, innov_cont_dec, red_dec, cont_rel1, \
+    # innov_cont_rel1, red_rel1 = OneRelay(0, i)
+
+    list_time2.append(timetaken)
+    list_encoded_packets2.append(encoded_packets)
+    list_decoded_packets2.append(decoded_packets)
+    list_relayed_packets2.append(relayed_packets)
+    list_cont_dec2.append(cont_dec)
+    list_innov_cont_dec2.append(innov_cont_dec)
+    list_red_dec2.append(red_dec)
+    list_cont_rel12.append(cont_rel1)
+    list_innov_cont_rel12.append(innov_cont_rel1)
+    list_red_rel12.append(red_rel1)
+    list_total_packets2.append(encoded_packets + relayed_packets)
+
+tp_list = np.array(list_total_packets)
+print "Minimum Total packets at: ", np.argmin(tp_list), " is :", tp_list.min()
+
+
+plt.figure(3)
+
+plt.subplot(131)
+plt.plot(index, list_encoded_packets, linestyle='--', marker='o', color='r', label='Encoded Packets')
+# plt.plot(index, list_encoded_packets2, linestyle='--', marker='o', color='b', label='encoded')
+# plt.legend()
+plt.ylabel("Encoded Packets")
+plt.xlabel("Relay Position")
+
+
+plt.subplot(133)
+plt.plot(index, list_total_packets, linestyle='--', marker='o', color='r', label='Total Packets')
+# plt.plot(index, list_total_packets2, linestyle='--', marker='o', color='b', label='total')
+# plt.legend()
+plt.ylabel("Total Packets")
+plt.xlabel("Relay Position")
+
+plt.subplot(132)
+plt.plot(index, list_relayed_packets, linestyle='--', marker='o', color='r', label='Relayed Packets')
+# plt.plot(index, list_relayed_packets2, linestyle='--', marker='o', color='b', label='relayed')
+# plt.legend()
+plt.ylabel("Relayed Packets")
+plt.xlabel("Relay Position")
 
 plt.figure(1)
 plt.subplot(221)
-plt.plot(index, list_time, linestyle='--', marker='o', color='b', label='Time')
+plt.plot(index, list_time, linestyle='--', marker='o', color='r', label='Time')
+# plt.plot(index, list_time2, linestyle='--', marker='o', color='b', label='Time')
+# plt.legend()
 plt.ylabel("Time Taken")
 
 plt.subplot(222)
-plt.plot(index, list_encoded_packets, linestyle='--', marker='o', color='r', label='encoded')
+plt.plot(index, list_encoded_packets, linestyle='--', marker='o', color='r', label='Encoded Packets')
+# plt.plot(index, list_encoded_packets2, linestyle='--', marker='o', color='b', label='encoded')
+# plt.legend()
 plt.ylabel("Encoded Packets")
 
 plt.subplot(223)
-plt.plot(index, list_decoded_packets, linestyle='--', marker='o', color='g', label='decoded')
-plt.ylabel("Decoded Packets")
+plt.plot(index, list_total_packets, linestyle='--', marker='o', color='r', label='Total Packets')
+# plt.plot(index, list_total_packets2, linestyle='--', marker='o', color='b', label='total')
+# plt.legend()
+plt.ylabel("Total Packets")
 
 plt.subplot(224)
-plt.plot(index, list_relyed_packets, linestyle='--', marker='o', color='b', label='relayed')
+plt.plot(index, list_relayed_packets, linestyle='--', marker='o', color='r', label='Relayed Packets')
+# plt.plot(index, list_relayed_packets2, linestyle='--', marker='o', color='b', label='relayed')
+# plt.legend()
 plt.ylabel("Relayed Packets")
 
 plt.figure(2)
@@ -172,7 +241,7 @@ x.add_column('Index', index)
 x.add_column('Time', list_time)
 x.add_column('Encoded Pkts', list_encoded_packets)
 x.add_column('Decoded Pkts', list_decoded_packets)
-x.add_column('Relayed Pkts', list_relyed_packets)
+x.add_column('Relayed Pkts', list_relayed_packets)
 print x
 
 data = x.get_string()

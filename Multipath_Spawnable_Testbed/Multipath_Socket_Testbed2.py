@@ -19,6 +19,16 @@ def threaded(fn):
     return wrapper
 
 
+def chunk_transpose(l, n):
+    """ Yield successive n-sized chunks from l.
+    """
+    x = []
+    for i in xrange(0, len(l), n):
+        x.append(l[i:i+n])
+        y = zip(*x)
+    return y
+
+
 def initialize():
     global adr
     global lin_dep_pkts
@@ -29,7 +39,7 @@ def initialize():
     global RECODE
 
     Node.DECODED = False
-    adr = [(1000, 1000) for _ in range(20)]
+    adr = [(1000, 1000) for _ in range(50)]
     Node.time_taken = 0
     Node.encoded_packets = 0
     Node.decoded_packets = 0
@@ -48,7 +58,7 @@ def delay(): time.sleep(0.001)
 
 
 #def txdelay(): time.sleep(0.005)
-def txdelay(): time.sleep(0.00)
+def txdelay(): time.sleep(0.000)
 
 
 class Node:
@@ -62,6 +72,7 @@ class Node:
     RelayOnlyWhenRecieved = False
     Dec_LD_profile = [0 for _ in range(65)]
     staticPause = 0
+    RECODE = True
 
     def __init__(self, x, y):
         global free_socket
@@ -72,7 +83,7 @@ class Node:
         self.bufindex = nxt_bufIndex
         nxt_bufIndex += 1
         lock.release()
-        self.txprob = 1
+        self.txprob = 100
 
         self.contribution = [0 for _ in range(Node.relayz+2)]        # [encoder, decoder, relay1, relay2, ...]
         self.innov_contribution = [0 for _ in range(Node.relayz+2)]  # [encoder, decoder, relay1, relay2, ...]
@@ -190,65 +201,81 @@ class Node:
         recoder = decoder_factory.build()
 
         #print(adr[1])
+        if Node.RECODE:
 
-        while not Node.DECODED:
-            #print(self.pause_list)
-            #print("####Relay#### " + str(self.bufindex))
-            # if recoder.is_complete():
-            #     print("IM DONEEEE")
-            try:
-                rcv = s.recvfrom(180)
-                if rcv[0] == "SHUTUP":
-                    self.pause(rcv[1][1])
-                    #print(self.pause_list)
-                    continue
+            while not Node.DECODED:
+                #print(self.pause_list)
+                #print("####Relay#### " + str(self.bufindex))
+                # if recoder.is_complete():
+                #     print("IM DONEEEE")
+                try:
+                    rcv = s.recvfrom(180)
+                    if rcv[0] == "SHUTUP":
+                        self.pause(rcv[1][1])
+                        #print(self.pause_list)
+                        continue
 
-                self.contribution[(rcv[1][1])-3000] += 1
-                recoder.decode(rcv[0])
-                rank = recoder.rank()
-                if prev_rank < rank:
-                    self.innov_contribution[(rcv[1][1])-3000] += 1
-                else:
-                    self.redundant_pkts[(rcv[1][1])-3000] += 1
-                    #lin_dep_pkts += 1
-                    i = (rcv[1][1])-3000
+                    self.contribution[(rcv[1][1])-3000] += 1
+                    recoder.decode(rcv[0])
+                    rank = recoder.rank()
+                    if prev_rank < rank:
+                        self.innov_contribution[(rcv[1][1])-3000] += 1
+                    else:
+                        self.redundant_pkts[(rcv[1][1])-3000] += 1
+                        #lin_dep_pkts += 1
+                        i = (rcv[1][1])-3000
 
-                    if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
-                        self.shutup(s, rcv[1][1])
+                        if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+                            self.shutup(s, rcv[1][1])
+                        """IMPORTANT FUNCTION - SAYS IM DONE TO STOP ENCODER"""
+                        # if (rcv[1][1]) == 3000 and recoder.is_complete():
+                        #     self.imDone(s, rcv[1][1])
 
-                    if (rcv[1][1]) == 3000 and recoder.is_complete():
-                        self.imDone(s, rcv[1][1])
-                    #print(self.pause_list)
+                except socket.timeout:
+                    pass
 
-            except socket.timeout:
-                pass
+                if prev_rank < rank or recoder.is_complete():
+                    pkt = recoder.recode()
+                    #print("recoding.......")
 
-            if prev_rank < rank or recoder.is_complete():
-                pkt = recoder.recode()
-                #print("recoding.......")
+                    txdelay()
+                    if np.random.randint(100) <= self.txprob:
+                        for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
+                            if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
+                                if not self.pause_list[i] > 0:      # To pause
+                                    if not self.isPaused():
+                                        s.sendto(pkt, ('', start_socket + i))
+                                    #Node.relayed_pkts += 1
+                                else:
+                                    self.pause_list[i] -= 1
+                                    #print(self.pause_list)
 
-                txdelay()
-                if np.random.randint(100) <= self.txprob:
+                                #print("Recoder Rank : " + str(recoder.rank()))
+                        if not self.isPaused():
+                            #print("BAAAAAA")
+                            Node.relayed_pkts += 1
+                            Node.indiv_relayed_pkts[self.bufindex] += 1
+                        # else:
+                        #     print("BAAAAAA")
+
+                prev_rank = rank
+
+        if not Node.RECODE:
+            while not Node.DECODED:
+                # print("####Relay#### " + str(self.bufindex))
+                try:
+                    rcv = s.recvfrom(180)
+                    self.contribution[(rcv[1][1])-3000] += 1
+                    pkt = rcv[0]
+                    txdelay()
                     for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
                         if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
-                            if not self.pause_list[i] > 0:      # To pause
-                                if not self.isPaused():
-                                    s.sendto(pkt, ('', start_socket + i))
-                                #Node.relayed_pkts += 1
-                            else:
-                                self.pause_list[i] -= 1
-                                #print(self.pause_list)
-
+                            s.sendto(pkt, ('', start_socket + i))
                             #print("Recoder Rank : " + str(recoder.rank()))
-                    if not self.isPaused():
-                        #print("BAAAAAA")
-                        Node.relayed_pkts += 1
-                        Node.indiv_relayed_pkts[self.bufindex] += 1
-                    # else:
-                    #     print("BAAAAAA")
+                    Node.relayed_pkts += 1
 
-            prev_rank = rank
-
+                except socket.timeout:
+                    pass
 
         s.close()
 
@@ -291,6 +318,7 @@ class Node:
                     self.innov_contribution[(rcv[1][1])-3000] += 1
                 else:
                     self.redundant_pkts[(rcv[1][1])-3000] += 1
+                    #print(self.redundant_pkts)
                     i = (rcv[1][1])-3000
                     if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
                         self.shutup(s, rcv[1][1])
