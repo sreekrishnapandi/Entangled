@@ -7,11 +7,13 @@ from plotly.graph_objs import *
 import pylab
 
 
-map_total_pkt = np.load('/Users/Krish/Google Drive/Notes/Project - Network Coding/Terminal_op/2dmap.npy')
+map_total_pkt = np.load('/Users/Krish/Google Drive/Notes/Project - Network Coding/Terminal_op/2dmap_corrected.npy')
 index = [_ for _ in range(1, 19)]
 
 z = np.array(map_total_pkt)
 intrp_data = interpolate.interp2d(index, index, z, kind='cubic')
+
+print("Minimum at: ", np.argmin(z), " is : ", z.min())
 
 pylab.figure(1)
 pylab.clf()
@@ -19,6 +21,7 @@ pylab.imshow(map_total_pkt, cmap=plt.cm.jet)
 pylab.colorbar()
 plt.clim(180, 260)
 pylab.gca().invert_yaxis()
+
 #pylab.show()
 
 newindex = np.arange(0, 18, 0.1)
@@ -34,4 +37,6 @@ pylab.imshow(MAP, cmap=plt.cm.jet)
 pylab.colorbar()
 plt.clim(180, 260)
 pylab.gca().invert_yaxis()
+plt.xticks(newindex, fontsize=9)
+plt.yticks(newindex, fontsize=9)
 pylab.show()

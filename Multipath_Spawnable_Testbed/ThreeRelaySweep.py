@@ -7,14 +7,14 @@ from plotly.graph_objs import *
 import pylab
 
 
-def TwoRelay(x1, y1, x2, y2):
+def ThreeRelay(x1, y1, x2, y2, x3, y3):
     """
     Give Avg statistics on system with one active relay.
     :param x1: X coordinate
     :param y1: Y coordinate
     :return: avg_time_taken, avg_encoded_packets, avg_relayed_packets, avg_decoded_packets
     """
-    Node.relayz = 2
+    Node.relayz = 3
 
     avg_time_taken = 0
     avg_encoded_packets = 0
@@ -211,7 +211,7 @@ print(newindex)
 MAP = intrp_data(newindex, newindex)
 #data.ev(newindex, newindex)
 print(MAP)
-np.save('/Users/Krish/Google Drive/Notes/Project - Network Coding/Terminal_op/2dmap_corrected.npy', z)
+np.save('/Users/Krish/Google Drive/Notes/Project - Network Coding/Terminal_op/2dmap.npy', z)
 
 pylab.figure(2)
 pylab.clf()

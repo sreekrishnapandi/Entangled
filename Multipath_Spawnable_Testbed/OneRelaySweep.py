@@ -23,7 +23,7 @@ def OneRelay(x, y):
     avg_redund_dec = [0 for _ in range(Node.relayz+2)]
     avg_redund_rel1 = [0 for _ in range(Node.relayz+2)]
 
-    iterations = 20
+    iterations = 50
 
     for i in range(iterations):
         initialize()
@@ -156,8 +156,10 @@ for i in range(1, 19):
     list_total_packets2.append(encoded_packets + relayed_packets)
 
 tp_list = np.array(list_total_packets)
+print tp_list
 print "Minimum Total packets at: ", np.argmin(tp_list), " is :", tp_list.min()
 
+np.save('/Users/Krish/Google Drive/Notes/Project - Network Coding/Terminal_op/1dOneRelaysweep.npy', tp_list)
 
 plt.figure(3)
 

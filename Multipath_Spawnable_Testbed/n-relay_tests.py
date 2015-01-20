@@ -1,6 +1,7 @@
 __author__ = 'Krish'
 
-from Multipath_Socket_Testbed2 import *
+# from Multipath_Socket_Testbed2 import *
+from Multipath_Soc_TB_Dynamic_FloCtrl import *
 
 """------- Average Statistics (Text report) --------"""
 
@@ -36,6 +37,7 @@ def avg_statistics():
     avg_redund_rel3 = [0 for _ in range(Node.relayz+2)]
 
     avg_indiv_relayed_pkts = [0 for _ in range(Node.relayz+2)]
+    avg_list_tx_prob = [0 for _ in range(Node.relayz+2)]
 
     volume = [0 for _ in range(Node.relayz+2)]
     IQ = [0 for _ in range(Node.relayz+2)]
@@ -83,6 +85,9 @@ def avg_statistics():
 
         while not Node.DECODED: pass
         print("==================------------------------- Encoded Pkts : " + str(Node.encoded_packets))
+
+        print chunk_transpose(Node.list_tx_prob[2:], 5)
+
         avg_time_taken += Node.time_taken
         avg_encoded_packets += Node.encoded_packets
         avg_decoded_packets += Node.decoded_packets
@@ -109,10 +114,13 @@ def avg_statistics():
             # avg_redund_rel3[i] += relay3.redundant_pkts[i]
 
             avg_indiv_relayed_pkts[i] += Node.indiv_relayed_pkts[i]
+            avg_list_tx_prob[i] += Node.list_tx_prob[i]
 
             #print(avg_redund_dec)
             #print(avg_redund_rel3)
         #print(snk.contribution)
+
+        # print (chunk_transpose(Node.list_tx_prob[2:], 5))
 
         delay()
         delay()
@@ -147,6 +155,7 @@ def avg_statistics():
         avg_redund_rel3[i] /= iterations
 
         avg_indiv_relayed_pkts[i] /= iterations
+        avg_list_tx_prob[i] /= iterations
 
     # for i in range(65):
     #         avg_dec_LD_profile[i] /= iterations
@@ -157,6 +166,7 @@ def avg_statistics():
             IQ[i] = round(avg_innov_contr_dec[i]*1.0/avg_indiv_relayed_pkts[i], 2)
             #rank[i] = round(volume[i] * IQ[i], 2)
             rank[i] = round(avg_innov_contr_dec[i]*1.0/avg_contr_dec[i], 2)
+            avg_list_tx_prob[i] = round(avg_list_tx_prob[i], 2)
         except ZeroDivisionError:
             volume[i] = 0
             IQ[i] = 0
@@ -173,6 +183,8 @@ def avg_statistics():
     print("Encoded Pkts : " + str(avg_encoded_packets/iterations))
     print("Relayed Pkts : " + str(avg_relayed_packets/iterations))
     print("Decoded Pkts : " + str(avg_decoded_packets/iterations))
+    print("TOTAL Pkts   : " + str((avg_relayed_packets + avg_encoded_packets)/iterations))
+
     print("Indiv. Relayed Pkts : " + str(chunk_transpose(avg_indiv_relayed_pkts[2:], 5)))
 
     print("\nContribution in Decoder : " + str(chunk_transpose(avg_contr_dec[2:], 5)))
@@ -183,9 +195,13 @@ def avg_statistics():
     print("IQ     : " + str(chunk_transpose(IQ[2:], 5)))
     print("Rank   : " + str(chunk_transpose(rank[2:], 5)))
 
-    print("\nVolume : " + str(volume))
-    print("IQ     : " + str(IQ))
-    print("Rank   : " + str(rank))
+    print "\nTx-Prob: ", chunk_transpose(avg_list_tx_prob[2:], 5)
+
+
+
+    # print("\nVolume : " + str(volume))
+    # print("IQ     : " + str(IQ))
+    # print("Rank   : " + str(rank))
 
     #print("Rank2  : " + str(chunk_transpose(rank2[2:], 5)))
 
