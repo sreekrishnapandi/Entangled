@@ -45,7 +45,7 @@ def avg_statistics():
         initialize()
 
         if i > 0:
-            set_Rates_(prev_rates)
+            set_States(prev_rates)
 
         src = Node(10, 0)
         snk = Node(10, 19)

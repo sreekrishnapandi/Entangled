@@ -28,9 +28,11 @@ def chunk_transpose(l, n):
         y = zip(*x)
     return y
 
-def set_Rates_(prev_rates):
+
+def set_States(prev_rates):
     Node.R_relays = prev_rates
     Node.first_run = False
+
 
 def initialize():
     global adr
@@ -58,7 +60,6 @@ def initialize():
     Node.indiv_relayed_pkts = [0 for _ in range(Node.relayz+2)]
     Node.R_relays = [[0 for _ in range(Node.relayz+2)] for __ in range(Node.relayz+2)]
     Node.list_tx_prob = [0 for _ in range(Node.relayz+2)]
-
 
 
 def delay(): time.sleep(0.01)
@@ -277,7 +278,7 @@ class Node:
                     #print("recoding.......")
 
                     txdelay()
-                    if np.random.randint(100) <= self.txprob:
+                    if np.random.randint(100) <= self.txprob and recoder.rank() > 0:
                         for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
                             if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not i == self.bufindex:
                                 if not self.pause_list[i] > 0:      # To pause
@@ -355,6 +356,7 @@ class Node:
 
                 if prev_rank < rank:
                     self.innov_contribution[sender] += 1
+                    # print Node.R_relays
                 else:
                     self.redundant_pkts[sender] += 1
                     #print(self.redundant_pkts)
