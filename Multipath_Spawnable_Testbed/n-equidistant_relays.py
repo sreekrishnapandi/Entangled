@@ -20,7 +20,7 @@ def n_Equidistant_Relays(no_of_relays, decoder_pos):
 
     avg_indiv_relayed_pkts = [0 for _ in range(Node.relayz+2)]
 
-    iterations = 3
+    iterations = 50
 
     interval = 0
     if no_of_relays > 0:
@@ -106,42 +106,62 @@ def normalize(v):
        return v
     return v*1./norm
 
+def tot_pkt_equidist_rel(max_rel, dec_pos):
+    max_relays = max_rel
+    decoder_pos = dec_pos
 
-max_relays = 2
-decoder_pos = 10
+    lst_Encodedpkts = []
+    lst_RelayedPkts = []
+    lst_TotalPkts = []
+    index = []
 
-lst_Encodedpkts = []
-lst_RelayedPkts = []
-lst_TotalPkts = []
-index = []
+    for i in range(max_relays + 1):
+        if decoder_pos / (i+1) > 19:
+            continue
+        enc, rel, tot = n_Equidistant_Relays(i, decoder_pos)
+        lst_Encodedpkts.append(enc)
+        lst_RelayedPkts.append(rel)
+        lst_TotalPkts.append(tot)
+        index.append(i)
 
-for i in range(max_relays + 1):
-    if decoder_pos / (i+1) > 19:
-        continue
-    enc, rel, tot = n_Equidistant_Relays(i, decoder_pos)
-    lst_Encodedpkts.append(enc)
-    lst_RelayedPkts.append(rel)
-    lst_TotalPkts.append(tot)
-    index.append(i)
+    print(lst_TotalPkts)
+    v = np.array(lst_TotalPkts)
+    norm_totalPkts = normalize(v)
 
-print(lst_TotalPkts)
-v = np.array(lst_TotalPkts)
-print(normalize(v))
+    return norm_totalPkts, index
+
 plt.figure(1)
 
-plt.subplot(131)
-plt.plot(index, lst_Encodedpkts, marker='o', color='b', label='Encoded Packets')
-plt.ylabel("Encoded Packets")
-plt.xlabel("No. Of Relays")
+color = 'rmbcg'
+markers = '+o*.x'
 
-plt.subplot(132)
-plt.plot(index, lst_RelayedPkts, marker='o', color='b', label='Relayed Packets')
-plt.ylabel("Relayed Packets")
-plt.xlabel("No. Of Relays")
+i = 0
+for position in [15, 25, 30, 35, 45]:
+    tot_pkt, index = tot_pkt_equidist_rel(15, position)
+    plt.plot(index, tot_pkt, marker=markers[i], color=color[i], label=("Sink Position: "+str(position)))
+    plt.ylabel("Normalized Total Packets")
+    plt.xlabel("No. Of Relays")
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
+    i += 1
 
-plt.subplot(133)
-plt.plot(index, lst_TotalPkts, marker='o', color='b', label='Total Packets')
-plt.ylabel("Total Packets")
-plt.xlabel("No. Of Relays")
+plt.show()
 
-#plt.show()
+
+# plt.figure(2)
+#
+# plt.subplot(131)
+# plt.plot(index, lst_Encodedpkts, marker='o', color='b', label='Encoded Packets')
+# plt.ylabel("Encoded Packets")
+# plt.xlabel("No. Of Relays")
+#
+# plt.subplot(132)
+# plt.plot(index, lst_RelayedPkts, marker='o', color='b', label='Relayed Packets')
+# plt.ylabel("Relayed Packets")
+# plt.xlabel("No. Of Relays")
+#
+# plt.subplot(133)
+# plt.plot(index, lst_TotalPkts, marker='o', color='b', label='Total Packets')
+# plt.ylabel("Total Packets")
+# plt.xlabel("No. Of Relays")
+#
+# plt.show()
