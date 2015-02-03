@@ -34,7 +34,7 @@ def set_States(prev_rates):
     Node.first_run = False
 
 
-def initialize():
+def initialize(cumil_ind_rel_pkt):
     global adr
     global sock_list
     global lin_dep_pkts
@@ -56,17 +56,19 @@ def initialize():
     start_socket = 3000
     nxt_bufIndex = 0
     RECODE = True
-    Node.Dec_LD_profile = [0 for _ in range(65)]
+    Node.Dec_LD_profile = [0 for _ in range(105)]
     Node.indiv_relayed_pkts = [0 for _ in range(Node.relayz+2)]
     Node.R_relays = [[0 for _ in range(Node.relayz+2)] for __ in range(Node.relayz+2)]
     Node.list_tx_prob = [0 for _ in range(Node.relayz+2)]
+    #Node.history_innov_pkts = [[0 for _ in range(Node.relayz+2)] for __ in range(Node.relayz+2)]
+    Node.cumilative_indiv_relayed_pkts = cumil_ind_rel_pkt
 
 
 def delay(): time.sleep(0.01)
 
 
 #def txdelay(): time.sleep(0.005)
-def txdelay(): time.sleep(0.005)
+def txdelay(): time.sleep(0.0005)
 
 
 class Node:
@@ -86,6 +88,8 @@ class Node:
     R_relays = [[0 for _ in range(relayz+2)] for __ in range(relayz+2)]
     list_tx_prob = [0 for _ in range(relayz+2)]
     first_run = True
+    history_innov_pkts = []
+    cumilative_indiv_relayed_pkts = []
 
     def __init__(self, x, y):
         global free_socket
@@ -104,13 +108,20 @@ class Node:
         self.pause_list = [0 for _ in range(Node.relayz+2)]
         self.doneList = [0 for _ in range(Node.relayz+2)]
 
+        self.cumilative_innov_contrib = Node.history_innov_pkts[self.bufindex]
+        #print "History :", Node.history_innov_pkts
+
         self.x = x
         self.y = y
         adr[self.bufindex] = (x, y)
         Node.sock_list[self.bufindex] = self.sockID
 
-        self.symbol_size = 128
-        self.symbols = 60
+        self.symbol_size = 64
+        self.symbols = 100
+
+        # self.symbol_size = 128
+        # self.symbols = 60
+
 
 
     def dist(self, x, y):
@@ -183,6 +194,26 @@ class Node:
             pkt = encoder.encode()
             #print(pkt)
             txdelay()
+
+            """ Rank - evaluate """
+            decoder = 1
+            rate_pri = Node.R_relays[decoder][self.bufindex]
+            rate_sec = 0
+
+            # print Node.R_relays
+            # print Node.list_tx_prob
+
+            for i in range(Node.relayz+2):
+                rate_sec += Node.R_relays[decoder][i] * Node.R_relays[i][self.bufindex]
+            RATE = (rate_pri + rate_sec) * 100
+            #print(RATE)
+
+            if (Node.encoded_packets > 5) or not Node.first_run:
+                self.txprob = RATE
+                Node.list_tx_prob[self.bufindex] = round(RATE, 2)
+
+            """------------------"""
+
             if np.random.randint(100) <= self.txprob:
                 for i in range(Node.relayz+2):
                     if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
@@ -193,6 +224,8 @@ class Node:
                             self.pause_list[i] -= 1
                 if not self.isPaused():
                     Node.encoded_packets += 1
+                    Node.cumilative_indiv_relayed_pkts[self.bufindex] += 1
+                    Node.indiv_relayed_pkts[self.bufindex] += 1
             #print("Encoded Packets : " + str(encoded_packets))
 
             #delay()
@@ -239,6 +272,7 @@ class Node:
 
                     if prev_rank < rank:
                         self.innov_contribution[sender] += 1
+                        self.cumilative_innov_contrib[sender] += 1
                     else:
                         self.redundant_pkts[sender] += 1
                         #lin_dep_pkts += 1
@@ -250,9 +284,9 @@ class Node:
                         """IMPORTANT FUNCTION - SAYS IM DONE TO STOP ENCODER"""
                         # if (rcv[1][1]) == 3000 and recoder.is_complete():
                         #     self.imDone(s, rcv[1][1])
+                    #print(Node.cumilative_indiv_relayed_pkts)
 
-                    Node.R_relays[self.bufindex][sender] = self.innov_contribution[sender] *1.0 / Node.indiv_relayed_pkts[sender]
-                    # print(Node.R_relays)
+                    Node.R_relays[self.bufindex][sender] = self.cumilative_innov_contrib[sender] * 1.0 / Node.cumilative_indiv_relayed_pkts[sender]
 
                 except socket.timeout:
                     pass
@@ -261,6 +295,7 @@ class Node:
 
                 """ Rank - evaluate """
                 decoder = 1
+
                 rate_pri = Node.R_relays[decoder][self.bufindex]
                 rate_sec = 0
                 for i in range(Node.relayz+2):
@@ -294,6 +329,7 @@ class Node:
                             #print("BAAAAAA")
                             Node.relayed_pkts += 1
                             Node.indiv_relayed_pkts[self.bufindex] += 1
+                            Node.cumilative_indiv_relayed_pkts[self.bufindex] += 1
                         # else:
                         #     print("BAAAAAA")
 
@@ -316,6 +352,7 @@ class Node:
                 except socket.timeout:
                     pass
 
+        Node.history_innov_pkts[self.bufindex] = self.cumilative_innov_contrib
         s.close()
 
     @threaded
@@ -356,7 +393,9 @@ class Node:
 
                 if prev_rank < rank:
                     self.innov_contribution[sender] += 1
+                    self.cumilative_innov_contrib[sender] += 1
                     # print Node.R_relays
+                    #print Node.list_tx_prob
                 else:
                     self.redundant_pkts[sender] += 1
                     #print(self.redundant_pkts)
@@ -371,8 +410,7 @@ class Node:
                 #print("Decoder Rank : " + str(decoder.rank()))
 
                 """ Eval - Rate"""
-                Node.R_relays[self.bufindex][sender] = self.innov_contribution[sender] *1.0 / Node.indiv_relayed_pkts[sender]
-
+                Node.R_relays[self.bufindex][sender] = self.cumilative_innov_contrib[sender] * 1.0 / Node.cumilative_indiv_relayed_pkts[sender]
 
             except socket.timeout:
                 pass
@@ -380,14 +418,14 @@ class Node:
                 pass
         #delay()
         #time.sleep(sleep_time)              # DELAY INTRODUCED to synchronise Encoding and decoding.
+
+        Node.history_innov_pkts[self.bufindex] = self.cumilative_innov_contrib
         s.close()
 
         if decoder.is_complete():
             Node.DECODED = True
             #print("DECODED")
             Node.time_taken = time.time() - start
-
-
 
 """------- Average Statistics (Text report) --------"""
 

@@ -1,7 +1,7 @@
 __author__ = 'Krish'
 
-from Multipath_Socket_Testbed2 import *
-# from Multipath_Soc_TB_Dynamic_FloCtrl import *
+# from Multipath_Socket_Testbed2 import *
+from Multipath_Soc_TB_Dynamic_FloCtrl import *
 
 """------- Average Statistics (Text report) --------"""
 
@@ -12,7 +12,7 @@ def avg_statistics():
     Node.relayz = 25
     Node.staticPause = 0
 
-    iterations = 10
+    iterations = 50
 
     avg_time_taken = 0
     avg_encoded_packets = 0
@@ -44,12 +44,19 @@ def avg_statistics():
     rank = [0 for _ in range(Node.relayz+2)]
     rank2 = [0 for _ in range(Node.relayz+2)]
 
+    prev_cumil_indiv_rel_pkts_ = [0 for _ in range(Node.relayz+2)]
+    Node.history_innov_pkts = [[0 for _ in range(Node.relayz+2)] for __ in range(Node.relayz+2)]
+    prev_rates = []
+
     for i in range(iterations):
-        initialize()
+        initialize(prev_cumil_indiv_rel_pkts_)
 
         coord = [1]
         for _ in range(1, 5):coord.append(coord[-1] + 4.25)
         #print(coord)
+
+        if i > 0:
+            set_States(prev_rates)
 
         src = Node(10, 0)
 
@@ -61,9 +68,6 @@ def avg_statistics():
             for y in coord:
                 RelayXY = Node(x, y)
                 RelayXY.relay()
-
-
-
 
         # relay1 = Node(5, 15)
         # relay2 = Node(10, 15)
@@ -86,7 +90,10 @@ def avg_statistics():
         while not Node.DECODED: pass
         print("==================------------------------- Encoded Pkts : " + str(Node.encoded_packets))
 
-        # print chunk_transpose(Node.list_tx_prob[2:], 5)
+        prev_rates = Node.R_relays
+        prev_cumil_indiv_rel_pkts_ = Node.cumilative_indiv_relayed_pkts
+
+        print "Tx Prob list : ", chunk_transpose(Node.list_tx_prob[2:], 5)
 
         avg_time_taken += Node.time_taken
         avg_encoded_packets += Node.encoded_packets
@@ -114,7 +121,7 @@ def avg_statistics():
             # avg_redund_rel3[i] += relay3.redundant_pkts[i]
 
             avg_indiv_relayed_pkts[i] += Node.indiv_relayed_pkts[i]
-            # avg_list_tx_prob[i] += Node.list_tx_prob[i]
+            avg_list_tx_prob[i] += Node.list_tx_prob[i]
 
             #print(avg_redund_dec)
             #print(avg_redund_rel3)

@@ -83,8 +83,12 @@ class Node:
         self.x = x
         self.y = y
         adr[self.bufindex] = (x, y)
-        self.symbol_size = 128
-        self.symbols = 60
+
+        # self.symbol_size = 128
+        # self.symbols = 60
+
+        self.symbol_size = 64
+        self.symbols = 100
 
     def dist(self, x, y):
         # print(x)
@@ -138,7 +142,7 @@ class Node:
 
             except socket.timeout:
                 pass
-
+        #print decoder.rank()
         s.sendto("DIE", ('', 3000))
         s.close()
 
@@ -171,6 +175,8 @@ class Node:
                 rcv = s.recvfrom(180)
                 # if rcv[0] == "SHUTUP":
                 #     self.pause(rcv[1][1])
+
+                """STOP ENCODER"""
                 if rcv[0] == "DIE":
                     print("Dying..")
                     break
@@ -179,6 +185,7 @@ class Node:
                     self.doneList[rcv[1][1]-3000] = 1
                     if self.isDone():
                         break
+
             except socket.timeout:
                 pass
 
@@ -283,7 +290,7 @@ class Node:
 
             except socket.timeout:
                 pass
-            if prev_rank < rank or recoder.is_complete() or Node.start:
+            if (prev_rank < rank or recoder.is_complete()) and Node.start:
                 print("Recodinr..")
                 pkt = recoder.recode()
                 #print("recoding.......")

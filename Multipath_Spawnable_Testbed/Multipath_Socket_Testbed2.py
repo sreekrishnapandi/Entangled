@@ -51,15 +51,15 @@ def initialize():
     start_socket = 3000
     nxt_bufIndex = 0
     RECODE = True
-    Node.Dec_LD_profile = [0 for _ in range(65)]
+    Node.Dec_LD_profile = [0 for _ in range(105)]
     Node.indiv_relayed_pkts = [0 for _ in range(Node.relayz+2)]
 
 
-def delay(): time.sleep(0.01)
+def delay(): time.sleep(0.005)
 
 
 #def txdelay(): time.sleep(0.005)
-def txdelay(): time.sleep(0.005)
+def txdelay(): time.sleep(0.0005)
 
 
 class Node:
@@ -71,7 +71,7 @@ class Node:
     relayed_pkts = 0
     indiv_relayed_pkts = [0 for _ in range(relayz+2)]
     RelayOnlyWhenRecieved = False
-    Dec_LD_profile = [0 for _ in range(65)]
+    Dec_LD_profile = [0 for _ in range(105)]
     staticPause = 0
     RECODE = True
     sock_list = [0 for _ in range(50)]
@@ -99,6 +99,9 @@ class Node:
         adr[self.bufindex] = (x, y)
         Node.sock_list[self.bufindex] = self.sockID
 
+        # self.symbol_size = 64
+        # self.symbols = 100
+        #
         self.symbol_size = 128
         self.symbols = 60
 
@@ -156,9 +159,10 @@ class Node:
         Assumption: "Decoded" message arrives in no delay to the encoder
         """
         #print(self.bufindex)
+
         while not Node.DECODED:
             try:
-                rcv = s.recvfrom(180)
+                rcv = s.recvfrom(500)
                 # if rcv[0] == "SHUTUP":
                 #     self.pause(rcv[1][1])
                 if rcv[0] == "IMDONE":
@@ -176,7 +180,6 @@ class Node:
                 for i in range(Node.relayz+2):
                     if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
                         if not self.pause_list[i] > 0:      # To pause
-
                                 s.sendto(pkt, ('', start_socket + i))
                         else:
                             self.pause_list[i] -= 1
@@ -211,10 +214,10 @@ class Node:
             while not Node.DECODED:
                 #print(self.pause_list)
                 #print("####Relay#### " + str(self.bufindex))
-                # if recoder.is_complete():
-                #     print("IM DONEEEE")
+
                 try:
-                    rcv = s.recvfrom(180)
+                    #if not recoder.is_complete():  #indent needed if used
+                    rcv = s.recvfrom(500)
                     if rcv[0] == "SHUTUP":
                         self.pause(rcv[1][1])
                         #print(self.pause_list)
@@ -233,36 +236,42 @@ class Node:
                         if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not adr[i] == (self.x, self.y):
                             self.shutup(s, rcv[1][1])
                         """IMPORTANT FUNCTION - SAYS IM DONE TO STOP ENCODER"""
+                        # if recoder.is_complete():
+                        #     print("IM DONEEEE")
                         # if (rcv[1][1]) == 3000 and recoder.is_complete():
                         #     self.imDone(s, rcv[1][1])
 
+                    """
+                    UNTAB the following "if" block and bring the "except" block here.
+                    CUrrent setting : recode and send only if recieved something
+                    (even if completely decoded data)
+                    """
+
+                    if prev_rank < rank or recoder.is_complete():
+                        pkt = recoder.recode()
+                        #print("recoding.......")
+
+                        txdelay()
+                        if np.random.randint(100) <= self.txprob:
+                            for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
+                                if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not i == self.bufindex:
+                                    if not self.pause_list[i] > 0:      # To pause
+                                        if not self.isPaused():
+                                            s.sendto(pkt, ('', start_socket + i))
+                                        #Node.relayed_pkts += 1
+                                    else:
+                                        self.pause_list[i] -= 1
+                                        #print(self.pause_list)
+
+                                    #print("Recoder Rank : " + str(recoder.rank()))
+                            if not self.isPaused():
+                                #print("BAAAAAA")
+                                Node.relayed_pkts += 1
+                                Node.indiv_relayed_pkts[self.bufindex] += 1
+                            # else:
+                            #     print("BAAAAAA")
                 except socket.timeout:
                     pass
-
-                if prev_rank < rank or recoder.is_complete():
-                    pkt = recoder.recode()
-                    #print("recoding.......")
-
-                    txdelay()
-                    if np.random.randint(100) <= self.txprob:
-                        for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
-                            if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not i == self.bufindex:
-                                if not self.pause_list[i] > 0:      # To pause
-                                    if not self.isPaused():
-                                        s.sendto(pkt, ('', start_socket + i))
-                                    #Node.relayed_pkts += 1
-                                else:
-                                    self.pause_list[i] -= 1
-                                    #print(self.pause_list)
-
-                                #print("Recoder Rank : " + str(recoder.rank()))
-                        if not self.isPaused():
-                            #print("BAAAAAA")
-                            Node.relayed_pkts += 1
-                            Node.indiv_relayed_pkts[self.bufindex] += 1
-                        # else:
-                        #     print("BAAAAAA")
-
                 prev_rank = rank
 
         if not Node.RECODE:
@@ -306,7 +315,7 @@ class Node:
         while not decoder.is_complete():
             #print(self.pause_list)
             try:
-                rcv = s.recvfrom(180)
+                rcv = s.recvfrom(500)
 
                 if rcv[0] == "SHUTUP":
                     self.pause(rcv[1][1])
