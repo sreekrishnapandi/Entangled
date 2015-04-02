@@ -43,7 +43,7 @@ def initialize():
     Node.Dec_LD_profile = [0 for _ in range(65)]
 
 
-def delay(): time.sleep(0.001)
+def delay(): time.sleep(0.01)
 
 
 def txdelay(): time.sleep(0.005)

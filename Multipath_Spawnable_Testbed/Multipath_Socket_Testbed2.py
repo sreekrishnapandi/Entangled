@@ -99,11 +99,11 @@ class Node:
         adr[self.bufindex] = (x, y)
         Node.sock_list[self.bufindex] = self.sockID
 
-        # self.symbol_size = 64
-        # self.symbols = 100
-        #
-        self.symbol_size = 128
-        self.symbols = 60
+        self.symbol_size = 64
+        self.symbols = 100
+
+        # self.symbol_size = 128
+        # self.symbols = 60
 
     def dist(self, x, y):
         # print(x)

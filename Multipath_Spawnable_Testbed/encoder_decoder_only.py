@@ -15,7 +15,7 @@ def only_decoder(x, y):
     avg_innov_contr_dec = [0 for _ in range(Node.relayz+2)]
     avg_redund_dec = [0 for _ in range(Node.relayz+2)]
 
-    iterations = 100
+    iterations = 10
 
     for i in range(iterations):
         initialize()
@@ -65,6 +65,7 @@ list_red_dec = []
 list_cont_rel1 = []
 list_innov_cont_rel1 = []
 list_red_rel1 = []
+list_analytical_encoded_pkts = []
 index = []
 
 for i in range(1, 20):
@@ -79,16 +80,23 @@ for i in range(1, 20):
     list_red_dec.append(red_dec)
     index.append(i)
 
+    ##-----
+    anal_enc = 60 / (1 - (i * 0.05))
+    list_analytical_encoded_pkts.append(anal_enc)
+    ##-----
+
 
 plt.figure(1)
 
-plt.subplot(121)
-plt.plot(index, list_encoded_packets, linestyle='--', marker='o', color='r', label='encoded')
+#plt.subplot(121)
+plt.plot(index, list_encoded_packets, linestyle='--', marker='o', color='r', label='simulated')
+plt.plot(index, list_analytical_encoded_pkts, linestyle='--', marker='*', color='b', label='analytical')
 plt.ylabel("Encoded Packets")
 plt.xlabel("Decoder Position")
+plt.legend(loc=2)
 
-plt.subplot(122)
-plt.plot(index, list_decoded_packets, linestyle='--', marker='o', color='g', label='decoded')
-plt.ylabel("Decoded Packets")
+# plt.subplot(122)
+# plt.plot(index, list_decoded_packets, linestyle='--', marker='o', color='g', label='decoded')
+# plt.ylabel("Decoded Packets")
 
 plt.show()

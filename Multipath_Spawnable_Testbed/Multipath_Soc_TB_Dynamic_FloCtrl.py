@@ -230,6 +230,7 @@ class Node:
 
             #delay()
             #time.sleep(sleep_time)                    # DELAY INTRODUCED to synchronise Encoding and decoding.
+
         #print("Encoder Stopped")
         s.close()
 
@@ -411,6 +412,8 @@ class Node:
 
                 """ Eval - Rate"""
                 Node.R_relays[self.bufindex][sender] = self.cumilative_innov_contrib[sender] * 1.0 / Node.cumilative_indiv_relayed_pkts[sender]
+
+                # print "Rank : ", rank, " Tx_Prob : ", Node.list_tx_prob
 
             except socket.timeout:
                 pass

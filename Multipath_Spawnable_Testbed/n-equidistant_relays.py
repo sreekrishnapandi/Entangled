@@ -20,7 +20,7 @@ def n_Equidistant_Relays(no_of_relays, decoder_pos):
 
     avg_indiv_relayed_pkts = [0 for _ in range(Node.relayz+2)]
 
-    iterations = 50
+    iterations = 1
 
     interval = 0
     if no_of_relays > 0:
@@ -98,6 +98,7 @@ def n_Equidistant_Relays(no_of_relays, decoder_pos):
 
 """--------------------------------------------"""
 
+
 def normalize(v):
     #norm=np.linalg.norm(v)
     norm = np.amax((v))
@@ -105,6 +106,7 @@ def normalize(v):
     if norm==0:
        return v
     return v*1./norm
+
 
 def tot_pkt_equidist_rel(max_rel, dec_pos):
     max_relays = max_rel
@@ -128,23 +130,23 @@ def tot_pkt_equidist_rel(max_rel, dec_pos):
     v = np.array(lst_TotalPkts)
     norm_totalPkts = normalize(v)
 
-    return norm_totalPkts, index
-
-plt.figure(1)
+    return norm_totalPkts, index, lst_TotalPkts
 
 color = 'rmbcg'
 markers = '+o*.x'
 
 i = 0
-for position in [15, 25, 30, 35, 45]:
-    tot_pkt, index = tot_pkt_equidist_rel(15, position)
-    plt.plot(index, tot_pkt, marker=markers[i], color=color[i], label=("Sink Position: "+str(position)))
-    plt.ylabel("Normalized Total Packets")
+for position in [101]:
+    plt.figure(i)
+    norm_tot_pkt, index, lst_tot_pkt = tot_pkt_equidist_rel(20, position)
+    plt.plot(index, lst_tot_pkt, marker=markers[i], color=color[i], label=("Sink Position: "+str(position)))
+    plt.ylabel("Total Packets")
     plt.xlabel("No. Of Relays")
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
     i += 1
-
-plt.show()
+    np.save('/Users/Krish/Google Drive/Notes/Project - Network Coding/Terminal_op/n-equid-rel_DEC-'+str(position)+'.npy'
+            , np.array(lst_tot_pkt))
+    plt.show()
 
 
 # plt.figure(2)

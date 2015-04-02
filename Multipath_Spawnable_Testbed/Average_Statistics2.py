@@ -9,7 +9,7 @@ from Multipath_Socket_Testbed2 import *
 def avg_statistics():
     Node.RECODE = True
     Node.RelayOnlyWhenRecieved = True
-    Node.relayz = 2
+    Node.relayz = 3
     Node.staticPause = 0
 
     avg_time_taken = 0
@@ -36,7 +36,7 @@ def avg_statistics():
 
     avg_indiv_relayed_pkts = [0 for _ in range(Node.relayz+2)]
 
-    iterations = 50
+    iterations = 10
 
 
     for i in range(iterations):
@@ -45,9 +45,12 @@ def avg_statistics():
 
         src = Node(10, 0)
         snk = Node(10, 19)
-        relay1 = Node(5, 5)
-        relay2 = Node(10, 10)
-        relay3 = Node(15, 15)
+        # relay1 = Node(5, 5)
+        # relay2 = Node(10, 10)
+        # relay3 = Node(15, 15)
+        relay1 = Node(0, 10)
+        relay2 = Node(1, 10)
+        relay3 = Node(20, 10)
 
         #master = Node(0, 0)
 
@@ -96,7 +99,8 @@ def avg_statistics():
         relay3.relay()
 
         while not Node.DECODED: pass
-        print("==================------------------------- Encoded Pkts : " + str(Node.encoded_packets))
+        print("==================------------------------- Encoded Pkts : " + str(Node.encoded_packets) +
+                                        " Total Pkts : " + str(Node.encoded_packets + Node.relayed_pkts))
         # print(Node.R_relays)
 
         avg_time_taken += Node.time_taken
