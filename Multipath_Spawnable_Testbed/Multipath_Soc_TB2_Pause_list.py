@@ -247,27 +247,27 @@ class Node:
                     (even if completely decoded data)
                     """
 
-                    if prev_rank < rank or recoder.is_complete():
-                        pkt = recoder.recode()
-                        #print("recoding.......")
+                    # if prev_rank < rank or recoder.is_complete():
+                    pkt = recoder.recode()
+                    #print("recoding.......")
 
-                        txdelay()
-                        if np.random.randint(100) <= self.txprob:
-                            for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
-                                if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not i == self.bufindex:
-                                    if not self.pause_list[i] > 0:      # To pause
-                                        if not self.isPaused():
-                                            s.sendto(pkt, ('', start_socket + i))
-                                        #Node.relayed_pkts += 1
-                                    else:
-                                        self.pause_list[i] -= 1
-                                        #print(self.pause_list)
+                    txdelay()
+                    if np.random.randint(100) <= self.txprob:
+                        for i in range(Node.relayz+2):               # (Node.relayz+1) because encoder also produces packets
+                            if np.random.randint(100) >= (self.dist(adr[i][0], adr[i][1])) * 5 and not i == self.bufindex:
+                                if not self.pause_list[i] > 0:      # To pause
+                                    if not self.isPaused():
+                                        s.sendto(pkt, ('', start_socket + i))
+                                    #Node.relayed_pkts += 1
+                                else:
+                                    self.pause_list[i] -= 1
+                                    #print(self.pause_list)
 
-                                    #print("Recoder Rank : " + str(recoder.rank()))
-                            if not self.isPaused():
-                                #print("BAAAAAA")
-                                Node.relayed_pkts += 1
-                                Node.indiv_relayed_pkts[self.bufindex] += 1
+                                #print("Recoder Rank : " + str(recoder.rank()))
+                        if not self.isPaused():
+                            #print("BAAAAAA")
+                            Node.relayed_pkts += 1
+                            Node.indiv_relayed_pkts[self.bufindex] += 1
                             # else:
                             #     print("BAAAAAA")
                 except socket.timeout:
@@ -353,207 +353,3 @@ class Node:
             Node.DECODED = True
             #print("DECODED")
             Node.time_taken = time.time() - start
-
-
-
-"""------- Average Statistics (Text report) --------"""
-
-#
-# def avg_statistics():
-#     global RECODE
-#     Node.RECODE = True
-#     Node.relayz = 1
-#
-#     avg_time_taken = 0
-#     avg_encoded_packets = 0
-#     avg_decoded_packets = 0
-#     avg_relayed_packets = 0
-#
-#     avg_contr_dec = [0 for _ in range(Node.relayz+2)]
-#     avg_contr_rel1 = [0 for _ in range(Node.relayz+2)]
-#     avg_innov_contr_dec = [0 for _ in range(Node.relayz+2)]
-#     avg_innov_contr_rel1 = [0 for _ in range(Node.relayz+2)]
-#     avg_redund_dec = [0 for _ in range(Node.relayz+2)]
-#     avg_redund_rel1 = [0 for _ in range(Node.relayz+2)]
-#
-#     iterations = 20
-#
-#     for i in range(iterations):
-#         initialize()
-#
-#         src = Node(0, 0)
-#         snk = Node(0, 19)
-#         relay1 = Node(0, 16)
-#         #relay2 = Node(7, 10)
-#         #relay3 = Node(5, 15)
-#         #relay4 = Node(5, 5)
-#
-#         src.source("")
-#         snk.sink()
-#         relay1.relay()
-#         #relay2.relay()
-#         #relay3.relay()
-#         #relay4.relay()
-#
-#         while not Node.DECODED: pass
-#         #print("==================------------------------- Encoded Pkts : " + str(encoded_packets))
-#         avg_time_taken += Node.time_taken
-#         avg_encoded_packets += Node.encoded_packets
-#         avg_decoded_packets += Node.decoded_packets
-#         avg_relayed_packets += Node.relayed_pkts
-#
-#         # print(snk.contribution)
-#         # print(snk.innov_contribution)
-#         for i in range(Node.relayz+2):          # To average the Contribution values
-#             avg_contr_dec[i] += snk.contribution[i]
-#             avg_innov_contr_dec[i] += snk.innov_contribution[i]
-#             avg_redund_dec[i] += snk.redundant_pkts[i]
-#
-#             avg_contr_rel1[i] += relay1.contribution[i]
-#             avg_innov_contr_rel1[i] += relay1.innov_contribution[i]
-#             avg_redund_rel1[i] += relay1.redundant_pkts[i]
-#
-#         delay()                     # To wait for OS to close the sockets , so that its available for next iteration
-#
-#     delay()
-#     print("Source  : (" + str(src.x) + ", " + str(src.y) + ")")
-#     print("Sink    : (" + str(snk.x) + ", " + str(snk.y) + ")")
-#     print("Relays  : " + str(Node.relayz))
-#
-#     # print("Relay 1 : (" + str(relay1.x) + ", " + str(relay1.y) + ")")
-#     # print("Relay 2 : (" + str(relay2.x) + ", " + str(relay2.y) + ")")
-#     # print("Relay 3 : (" + str(relay3.x) + ", " + str(relay3.y) + ")")
-#
-#     for i in range(Node.relayz+2):
-#         avg_contr_dec[i] /= iterations
-#         avg_innov_contr_dec[i] /= iterations
-#         avg_redund_dec[i] /= iterations
-#         avg_contr_rel1[i] /= iterations
-#         avg_innov_contr_rel1[i] /= iterations
-#         avg_redund_rel1[i] /= iterations
-#
-#     print("\nAverage of " + str(iterations) + " iterations")
-#     print("Time Taken    : " + str(avg_time_taken/iterations))
-#     print("Min req packets : " + str(src.symbols))
-#     print("Encoded Pkts : " + str(avg_encoded_packets/iterations))
-#     print("Relayed Pkts : " + str(avg_relayed_packets/iterations))
-#     print("Decoded Pkts : " + str(avg_decoded_packets/iterations))
-#     print("Contr. in Decoder : " + str(avg_contr_dec))
-#     print("Innov Contr. in Decoder : " + str(avg_innov_contr_dec))
-#     print("Redund. Pkts in Decoder : " + str(avg_redund_dec))
-
-#
-# def OneRelay(x, y):
-#     """
-#     Give Avg statistics on system with one active relay.
-#     :param x: X coordinate
-#     :param y: Y coordinate
-#     :return: avg_time_taken, avg_encoded_packets, avg_relayed_packets, avg_decoded_packets
-#     """
-#     avg_time_taken = 0
-#     avg_encoded_packets = 0
-#     avg_decoded_packets = 0
-#     avg_relayed_packets = 0
-#     global RECODE
-#
-#     iterations = 20
-#
-#     for i in range(iterations):
-#         initialize()
-#
-#         Node.RECODE = True
-#         Node.relayz = 1
-#
-#         src = Node(0, 0)
-#         snk = Node(0, 19)
-#         relay1 = Node(x, y)
-#         #relay2 = Node(7, 10)
-#         #relay3 = Node(5, 15)
-#         #relay4 = Node(5, 5)
-#
-#         src.source("")
-#         snk.sink()
-#         relay1.relay()
-#         #relay2.relay()
-#         #relay3.relay()
-#         #relay4.relay()
-#
-#         while not Node.DECODED: pass
-#         #print("==================------------------------- Encoded Pkts : " + str(encoded_packets))
-#         avg_time_taken += Node.time_taken
-#         avg_encoded_packets += Node.encoded_packets
-#         avg_decoded_packets += Node.decoded_packets
-#         avg_relayed_packets += Node.relayed_pkts
-#
-#         delay()                     # To wait for OS to close the sockets , so that its available for next iteration
-#
-#     delay()
-#
-#     # print("Source  : (" + str(src.x) + ", " + str(src.y) + ")")
-#     # print("Sink    : (" + str(snk.x) + ", " + str(snk.y) + ")")
-#     # print("Relays  : " + str(Node.relayz))
-#     #
-#     # # print("Relay 1 : (" + str(relay1.x) + ", " + str(relay1.y) + ")")
-#     # # print("Relay 2 : (" + str(relay2.x) + ", " + str(relay2.y) + ")")
-#     # # print("Relay 3 : (" + str(relay3.x) + ", " + str(relay3.y) + ")")
-#     #
-#     # print("\nAverage of " + str(iterations) + " iterations")
-#     # print("Time Taken    : " + str(avg_time_taken/iterations))
-#     # print("Min req packets : " + str(src.symbols))
-#     # print("Encoded Pkts : " + str(avg_encoded_packets/iterations))
-#     # print("Relayed Pkts : " + str(avg_relayed_packets/iterations))
-#     # print("Decoded Pkts : " + str(avg_decoded_packets/iterations))
-#
-#     return avg_time_taken/iterations, avg_encoded_packets/iterations, avg_relayed_packets/iterations, \
-#            avg_decoded_packets/iterations
-
-
-# """  ###########--- Sweep One Relay from Source to destination and plot the Statistics ---#########  """
-# list_time = []
-# list_encoded_packets = []
-# list_relyed_packets = []
-# list_decoded_packets = []
-# index = []
-#
-# for i in range(1, 25):
-#     timetaken, Node.encoded_packets, relyed_packets, Node.decoded_packets = OneRelay(1, i)
-#     list_time.append(timetaken)
-#     list_encoded_packets.append(encoded_packets)
-#     list_decoded_packets.append(decoded_packets)
-#     list_relyed_packets.append(relyed_packets)
-#     index.append(i)
-#
-# plt.figure(1)
-# plt.subplot(221)
-# plt.plot(index, list_time, linestyle='--', marker='o', color='b', label='Time')
-# plt.ylabel("Time Taken")
-#
-#
-# plt.subplot(222)
-# plt.plot(index, list_encoded_packets, linestyle='--', marker='o', color='r', label='encoded')
-# plt.ylabel("Encoded Packets")
-#
-# plt.subplot(223)
-# plt.plot(index, list_decoded_packets, linestyle='--', marker='o', color='g', label='decoded')
-# plt.ylabel("Decoded Packets")
-#
-# plt.subplot(224)
-# plt.plot(index, list_relyed_packets, linestyle='--', marker='o', color='b', label='relayed')
-# plt.ylabel("Relayed Packets")
-# plt.show()
-#
-# x = PrettyTable()
-# x.add_column('Index', index)
-# x.add_column('Time', list_time)
-# x.add_column('Encoded Pkts', list_encoded_packets)
-# x.add_column('Decoded Pkts', list_decoded_packets)
-# x.add_column('Relayed Pkts', list_relyed_packets)
-# print x
-#
-# data = x.get_string()
-#
-# with open('/Users/Krish/Office/FILES/Multipath-OneRelaySweep/Result.txt', 'wb') as f:
-#     f.write(data)
-
-
-#avg_statistics()

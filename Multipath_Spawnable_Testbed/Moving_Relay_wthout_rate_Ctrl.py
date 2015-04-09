@@ -3,7 +3,7 @@ __author__ = 'Krish'
 import csv
 import time
 import datetime
-from Multipath_Socket_Testbed2 import *
+from Multipath_Soc_TB2_Pause_list import *
 # from Multipath_Soc_TB_Dynamic_FloCtrl import *
 
 
@@ -14,7 +14,7 @@ def avg_statistics(x1, y1):
     Node.RECODE = True
     Node.RelayOnlyWhenRecieved = True
     Node.relayz = 3
-    Node.staticPause = 0
+    Node.staticPause = 5
 
     avg_time_taken = 0
     avg_encoded_packets = 0
@@ -42,7 +42,7 @@ def avg_statistics(x1, y1):
 
     prev_cumil_indiv_rel_pkts_ = [0 for _ in range(Node.relayz+2)]
 
-    iterations = 100
+    iterations = 75
 
     prev_rates = []
 
@@ -229,7 +229,7 @@ def avg_statistics(x1, y1):
 
     # plt.show()
 
-    return (x1,\
+    return (Node.staticPause, x1,\
            iterations,\
            (avg_encoded_packets/iterations),\
            (avg_relayed_packets/iterations),\
@@ -248,10 +248,11 @@ x_pos = []
 #     total_pkt.append(avg_statistics(x1*1./3, 10))
 #     x_pos.append(x1)
 
-table = [["Relay 2 Position", "Iterations", "Encoded Pkts", "Relayed Pkts", "Total Pkts",
+table = [["Pause cycles", "Relay 2 Position", "Iterations", "Encoded Pkts", "Relayed Pkts", "Total Pkts",
           "Relayed - R1", "Relayed - R2", "Relayed - R3", "Dec - Contr Enc", "Dec - Contr R1", "Dec - Contr R2",
           "Dec - Contr R3", "Dec - Innov Enc", "Dec - Innov R1", "Dec - Innov R2", "Dec - Innov R3",
           "Dec - Redundant Enc", "Dec - Redundant R1", "Dec - Redundant R2", "Dec - Redundant R3"]]
+
 
 for x1 in range(20):
     print "###########  Relay 2 Coord : (", x1, ', 10) #############'
@@ -260,7 +261,7 @@ for x1 in range(20):
     #total_pkt.append(avg_statistics(x1, 10))
     x_pos.append(x1)
 
-
+table.append('SEND wen rec')
 # plt.figure(0)
 # plt.plot(x_pos, total_pkt)
 # plt.show()

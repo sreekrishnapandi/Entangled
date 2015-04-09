@@ -1,15 +1,12 @@
 __author__ = 'Krish'
 
 from Multipath_Socket_Testbed2 import *
-from Multipath_Soc_TB_Dynamic_FloCtrl import *
-import csv
-import time
-import datetime
+# from Multipath_Soc_TB_Dynamic_FloCtrl import *
 
 """------- Average Statistics (Text report) --------"""
 
 
-def avg_statistics(x1, y1):
+def avg_statistics():
     Node.RECODE = True
     Node.RelayOnlyWhenRecieved = True
     Node.relayz = 3
@@ -39,31 +36,22 @@ def avg_statistics(x1, y1):
 
     avg_indiv_relayed_pkts = [0 for _ in range(Node.relayz+2)]
 
-    prev_cumil_indiv_rel_pkts_ = [0 for _ in range(Node.relayz+2)]
-
     iterations = 10
 
-    prev_rates = []
-
-    Node.history_innov_pkts = [[0 for _ in range(Node.relayz+2)] for __ in range(Node.relayz+2)]
 
     for i in range(iterations):
 
-        initialize(prev_cumil_indiv_rel_pkts_)
-        #initialize([0 for _ in range(Node.relayz+2)])
-
-
-        if i > 0:
-            set_States(prev_rates)
+        initialize()
 
         src = Node(10, 0)
         snk = Node(10, 19)
         relay1 = Node(5, 5)
-        relay2 = Node(x1, y1)
+        relay2 = Node(10, 10)
         relay3 = Node(15, 15)
-        # relay1 = Node(5, 10)
-        # relay2 = Node(x1, y1)
-        # relay3 = Node(15, 10)
+        # relay1 = Node(0, 10)
+        # relay2 = Node(1, 10)
+        # relay3 = Node(20, 10)
+
         #master = Node(0, 0)
 
         # src.txprob = 42
@@ -78,23 +66,42 @@ def avg_statistics(x1, y1):
 
         #master.master()
 
+        node_array = [src, snk, relay1, relay2, relay3]
+        dist_matrix = []
+        error_prob_matrix = []
+        volume_matrix = []
+
+        for x_node in node_array:
+            dist_matrix.append([])
+            error_prob_matrix.append([])
+            volume_matrix.append([])
+            for y_node in node_array:
+                if x_node == y_node:
+                    dist_matrix[-1].append(0)
+                    error_prob_matrix[-1].append(100)
+                    volume_matrix[-1].append(0)
+                else:
+                    dist_matrix[-1].append(round(x_node.dist(y_node.x, y_node.y) ,2))
+                    error_prob_matrix[-1].append(round(dist_matrix[-1][-1] * 5, 2))
+                    volume_matrix[-1].append(round(100 - error_prob_matrix[-1][-1], 2))
+
+
+        # print "dist : ", dist_matrix
+        # print "error : ", error_prob_matrix
+        # print "Volume : ", volume_matrix
+
+
+
         src.source("")
         snk.sink()
         relay1.relay()
         relay2.relay()
         relay3.relay()
 
-
         while not Node.DECODED: pass
-        # print("==================------------------------- Encoded Pkts : " + str(Node.encoded_packets) +
-        #                                 " Total Pkts : " + str(Node.encoded_packets + Node.relayed_pkts))
-
+        print("==================------------------------- Encoded Pkts : " + str(Node.encoded_packets) +
+                                        " Total Pkts : " + str(Node.encoded_packets + Node.relayed_pkts))
         # print(Node.R_relays)
-
-        # print "Tx Probs in avg : ", Node.list_tx_prob
-
-        prev_rates = Node.R_relays
-        prev_cumil_indiv_rel_pkts_ = Node.cumilative_indiv_relayed_pkts
 
         avg_time_taken += Node.time_taken
         avg_encoded_packets += Node.encoded_packets
@@ -226,53 +233,14 @@ def avg_statistics(x1, y1):
     plt.subplots_adjust(left=0.04, right=0.98)
 
     for i in range(101):
-        avg_dec_LD_profile[i] = avg_dec_LD_profile[i] * 1.0 / 100
+        avg_dec_LD_profile[i] = avg_dec_LD_profile[i] * 1.0 / iterations
 
     plt.figure(2)
     # plt.ylim(0, 0.5)
-    #print(avg_dec_LD_profile)
+    print(avg_dec_LD_profile)
     plt.plot([i for i in range(101)], avg_dec_LD_profile)
 
-    # plt.show()
-
-    return (Node.staticPause, x1,\
-           iterations,\
-           (avg_encoded_packets/iterations),\
-           (avg_relayed_packets/iterations),\
-           (avg_relayed_packets/iterations)+(avg_encoded_packets/iterations),
-            avg_indiv_relayed_pkts[2], avg_indiv_relayed_pkts[3], avg_indiv_relayed_pkts[4],
-            avg_contr_dec[0], avg_contr_dec[2], avg_contr_dec[3], avg_contr_dec[4],
-            avg_innov_contr_dec[0], avg_innov_contr_dec[2], avg_innov_contr_dec[3], avg_innov_contr_dec[4],
-            avg_redund_dec[0], avg_redund_dec[2], avg_redund_dec[3], avg_redund_dec[4])
+    plt.show()
 
 
-
-total_pkt = []
-x_pos = []
-# for x1 in range(60):
-#     print "###########  Relay 2 Coord : (", x1, ', 10) #############'
-#     total_pkt.append(avg_statistics(x1*1./3, 10))
-#     x_pos.append(x1)
-
-table = [["Pause cycles", "Relay 2 Position", "Iterations", "Encoded Pkts", "Relayed Pkts", "Total Pkts",
-          "Relayed - R1", "Relayed - R2", "Relayed - R3", "Dec - Contr Enc", "Dec - Contr R1", "Dec - Contr R2",
-          "Dec - Contr R3", "Dec - Innov Enc", "Dec - Innov R1", "Dec - Innov R2", "Dec - Innov R3",
-          "Dec - Redundant Enc", "Dec - Redundant R1", "Dec - Redundant R2", "Dec - Redundant R3"]]
-
-for x1 in range(20):
-    print "###########  Relay 2 Coord : (", x1, ', 10) #############'
-    data = avg_statistics(x1, 10)
-    table.append(data)
-    #total_pkt.append(avg_statistics(x1, 10))
-    x_pos.append(x1)
-
-
-# plt.figure(0)
-# plt.plot(x_pos, total_pkt)
-# plt.show()
-
-ts = time.time()
-with open('/Users/Krish/Google Drive/Notes/Project - Network Coding/Terminal_op/'+
-                  datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M')+'MovRel_WITH_RC.csv', 'w') as csvfile:
-    writer = csv.writer(csvfile)
-    [writer.writerow(r) for r in table]
+avg_statistics()
